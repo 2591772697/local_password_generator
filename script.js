@@ -86,11 +86,18 @@ const translations = {
         strengthCheckerBtn: "🔍 强度检测",
         modalTitle: "🔍 专业密码强度检测",
         showPw: "显示密码",
+        checkPwPlaceholder: "输入要检测的密码",
         lengthLabel: "长度",
         scoreLabel: "评分",
         crackTimeLabel: "破解时间估算（在线/离线）",
         crackTimeOnline: "在线（每秒 1 千次）",
         crackTimeOffline: "离线（每秒 1 万亿次）",
+        timeSeconds: "秒",
+        timeMinutes: "分钟",
+        timeHours: "小时",
+        timeDays: "天",
+        timeYears: "年",
+        timeOver100Years: "> 100 年",
         suggestionsLabel: "改进建议",
         suggestionShort: "密码太短，建议至少 8 位。",
         suggestionCharset: "增加字符种类（大小写、数字、特殊字符）。",
@@ -184,11 +191,18 @@ const translations = {
         strengthCheckerBtn: "🔍 Strength Check",
         modalTitle: "🔍 Professional Password Strength Checker",
         showPw: "Show password",
+        checkPwPlaceholder: "Enter a password to check",
         lengthLabel: "Length",
         scoreLabel: "Score",
         crackTimeLabel: "Estimated crack time (online / offline)",
         crackTimeOnline: "Online (1k/s)",
         crackTimeOffline: "Offline (1 trillion/s)",
+        timeSeconds: "seconds",
+        timeMinutes: "minutes",
+        timeHours: "hours",
+        timeDays: "days",
+        timeYears: "years",
+        timeOver100Years: "> 100 years",
         suggestionsLabel: "Suggestions",
         suggestionShort: "Password too short, use at least 8 characters.",
         suggestionCharset: "Add more character types (uppercase, digits, special).",
@@ -270,6 +284,12 @@ function switchLanguage(lang) {
         const key = el.getAttribute('data-i18n');
         if (translations[lang] && translations[lang][key] !== undefined) {
             el.innerHTML = translations[lang][key];
+        }
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (translations[lang] && translations[lang][key] !== undefined) {
+            el.placeholder = translations[lang][key];
         }
     });
     generate();
@@ -724,12 +744,12 @@ function updateStrengthReport(password) {
     const onlineSeconds = totalCombinations / onlineRate;
     const offlineSeconds = totalCombinations / offlineRate;
     const formatTime = (sec) => {
-        if (sec < 60) return `${Math.round(sec)} 秒`;
-        if (sec < 3600) return `${Math.round(sec/60)} 分钟`;
-        if (sec < 86400) return `${Math.round(sec/3600)} 小时`;
-        if (sec < 31536000) return `${Math.round(sec/86400)} 天`;
-        if (sec < 31536000*100) return `${Math.round(sec/31536000)} 年`;
-        return `> 100 年`;
+        if (sec < 60) return `${Math.round(sec)} ${tKey('timeSeconds')}`;
+        if (sec < 3600) return `${Math.round(sec/60)} ${tKey('timeMinutes')}`;
+        if (sec < 86400) return `${Math.round(sec/3600)} ${tKey('timeHours')}`;
+        if (sec < 31536000) return `${Math.round(sec/86400)} ${tKey('timeDays')}`;
+        if (sec < 31536000*100) return `${Math.round(sec/31536000)} ${tKey('timeYears')}`;
+        return tKey('timeOver100Years');
     };
     const onlineStr = formatTime(onlineSeconds);
     const offlineStr = formatTime(offlineSeconds);
