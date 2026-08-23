@@ -433,7 +433,7 @@ function escapeHtml(str) {
     return str.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 }
 
-// ---- 二维码生成（默认 445×445，显示为 img） ----
+// ---- 二维码生成（默认 450×450，显示为 img） ----
 function generateQRCode(text) {
     const container = els.qrcodeContainer;
     container.innerHTML = '';
@@ -448,8 +448,8 @@ function generateQRCode(text) {
     document.body.appendChild(tempDiv);
     const qr = new QRCode(tempDiv, {
         text: text,
-        width: 445,
-        height: 445,
+        width: 450,
+        height: 450,
         colorDark: '#000000',
         colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.L
@@ -465,8 +465,8 @@ function generateQRCode(text) {
     const wrapper = document.createElement('div');
     wrapper.style.display = 'inline-block';
     wrapper.style.background = '#ffffff';
-    wrapper.style.padding = '12px';          // 更宽的白边
-    wrapper.style.border = '17px solid #fed400';  // 更粗、颜色更深
+    wrapper.style.padding = '10px';          // 更宽的白边
+    wrapper.style.border = '19px solid #fed400';  // 更粗、颜色更深
     wrapper.style.borderRadius = '8px';
     wrapper.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
     wrapper.appendChild(img);
@@ -513,8 +513,8 @@ function openQRCodeInNewTab() {
             .qr-wrapper {
                 display:inline-block;
                 background: #ffffff;
-                padding: 18px;
-                border: 18px solid #1d4ed8;
+                padding: 15px;
+                border: 19px solid #1d4ed8;
                 border-radius: 16px;
                 box-shadow: 0 4px 20px rgba(0,0,0,0.15);
             }
