@@ -5,7 +5,7 @@ const EXCLUDE_SPOKEN = new Set("lI1oO0B8S5Z2g9qG6T7".split(""));
 const EXCLUDE_SIMILAR = new Set("lI1|0Oo5Ss8B2Zz6G9gq".split(""));
 const EXCLUDE_MOBILE = new Set([..."ABCDEFGHIJKLMNOPQRSTUVWXYZ", ..."!@#$%^&*()-_=+[]{};:,.?/~`\"\\|<>"]);
 
-// ===== 语言翻译表 =====
+// ===== 语言翻译表（未变动） =====
 const translations = {
     zh: {
         appTitle: "🔐 密码生成器 V8",
@@ -214,7 +214,7 @@ function getCategoryName(type) {
     return t(map[type] || type);
 }
 
-// ===== 移除原互斥逻辑，改为仅提示 =====
+// ===== 提示更新（仅显示约束说明） =====
 function updateMobileHint() {
     if (els.easyMobile.checked && currentMode === 'password') {
         els.filterHint.textContent = t('filterHintMobile');
@@ -308,11 +308,14 @@ function buildPool() {
     return { pool, categories };
 }
 
+// ===== 关键修改：applyFilters 不再排除 easyMobile 的字符 =====
 function applyFilters(pool, categories) {
     const exclude = new Set();
     if (els.easySpeak.checked) EXCLUDE_SPOKEN.forEach(c => exclude.add(c));
     if (els.easyRead.checked) EXCLUDE_SIMILAR.forEach(c => exclude.add(c));
-    if (els.easyMobile.checked) EXCLUDE_MOBILE.forEach(c => exclude.add(c));
+    // 注意：不再因为 easyMobile 排除字符，easyMobile 只控制生成数量
+    // 原代码: if (els.easyMobile.checked) EXCLUDE_MOBILE.forEach(c => exclude.add(c));  ← 已移除
+
     if (!exclude.size) return { pool, categories, removed: [] };
     const filteredPool = pool.split('').filter(c => !exclude.has(c)).join('');
     const removed = [];
@@ -337,56 +340,40 @@ function generatePassword(pool, length, categories) {
     return result.join("");
 }
 
-// ===== 重写的智能手机简单模式生成函数（构造法） =====
+// ===== 智能手机简单模式生成（构造法：先放必选字符，再填充，最后打乱） =====
 function generateMobilePassword(length, categories, effectivePool) {
-    // 判断是否勾选了大写和特殊
     const hasUpper = categories.some(c => c.name === getCategoryName('upper'));
     const hasSpecial = categories.some(c => c.name === getCategoryName('special'));
 
-    // 如果两者都未勾选，则退化为普通生成
     if (!hasUpper && !hasSpecial) {
         return generatePassword(effectivePool, length, categories);
     }
 
-    // 构造填充池（小写 + 数字，因为这是简单的字符）
+    // 填充池：小写 + 数字
     const lowerCat = categories.find(c => c.name === getCategoryName('lower'));
     const digitCat = categories.find(c => c.name === getCategoryName('digits'));
     let fillPool = '';
     if (lowerCat) fillPool += lowerCat.chars;
     if (digitCat) fillPool += digitCat.chars;
-
-    // 如果填充池为空，则无法满足长度（只能产生1或2位），抛出错误
     if (!fillPool) {
         throw new Error(t('errorMobileConstraintNoFill'));
     }
 
-    // 创建一个空数组
     const chars = [];
-
-    // 1. 如果需要大写，从大写池中取一个随机字符
     if (hasUpper) {
         const upperCat = categories.find(c => c.name === getCategoryName('upper'));
         chars.push(randomChar(upperCat.chars));
     }
-
-    // 2. 如果需要特殊，从特殊池中取一个随机字符
     if (hasSpecial) {
         const specialCat = categories.find(c => c.name === getCategoryName('special'));
         chars.push(randomChar(specialCat.chars));
     }
 
-    // 此时 chars 长度可能是 1（只勾了一个）或 2（两个都勾了）
-
-    // 3. 剩余位数填充
     const remain = length - chars.length;
-    if (remain < 0) {
-        throw new Error(t('errorLengthTooShort', { n: categories.length }));
-    }
+    if (remain < 0) throw new Error(t('errorLengthTooShort', { n: categories.length }));
     for (let i = 0; i < remain; i++) {
         chars.push(randomChar(fillPool));
     }
-
-    // 4. 打乱顺序（shuffle）
     shuffle(chars);
     return chars.join('');
 }
@@ -530,7 +517,6 @@ function generate() {
                 els.lengthHint.style.color = "";
             }
 
-            // ---- 生成密码（根据是否启用智能手机简单模式） ----
             const mobileMode = els.easyMobile.checked;
             const generatedList = [];
             for (let i = 0; i < count; i++) {
