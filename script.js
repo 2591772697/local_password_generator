@@ -774,7 +774,12 @@ function updateStrengthReport(password) {
 
     // 填充UI
     els.rLen.textContent = len;
-    els.rTypes.textContent = variety + (variety > 0 ? ` (${[hasLower?'小写':'', hasUpper?'大写':'', hasDigit?'数字':'', hasSpecial?'特殊':''].filter(Boolean).join('/')})` : '');
+    els.rTypes.textContent = variety + (variety > 0 ? ` (${[
+        hasLower ? tKey('categoryLower') : '',
+        hasUpper ? tKey('categoryUpper') : '',
+        hasDigit ? tKey('categoryDigits') : '',
+        hasSpecial ? tKey('categorySpecial') : ''
+    ].filter(Boolean).join('/')})` : '');
     els.rEntropy.textContent = entropy.toFixed(1) + ' bits';
     els.rEffEntropy.textContent = finalEntropy.toFixed(1) + ' bits';
     els.rScore.textContent = `${score} / 100 (${gradeLabel})`;
