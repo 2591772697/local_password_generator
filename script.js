@@ -76,7 +76,11 @@ const translations = {
         categoryDigits: "数字",
         categorySpecial: "特殊字符",
         qrLabel: "二维码",
-        qrPlaceholder: "点击复制密码后显示二维码"
+        qrPlaceholder: "点击复制密码后显示二维码",
+        pinOptionsLabel: "PIN 选项",
+        excludeConsecutiveLabel: "排除连续数字（如 66, 11, 00）",
+        excludeRepeatedLabel: "排除相同数字（每位数字只能出现一次）",
+        pinOptionsHint: "排除相同数字仅在位数 ≤ 10 时生效",
     },
     en: {
         appTitle: "🔐 Password Generator V8",
@@ -147,7 +151,11 @@ const translations = {
         categoryDigits: "Digits",
         categorySpecial: "Special",
         qrLabel: "QR Code",
-        qrPlaceholder: "Click copy password to show QR"
+        qrPlaceholder: "Click copy password to show QR",
+        pinOptionsLabel: "PIN Options",
+        excludeConsecutiveLabel: "Exclude consecutive digits (e.g., 66, 11, 00)",
+        excludeRepeatedLabel: "Exclude repeated digits (each digit can appear only once)",
+        pinOptionsHint: "Exclude repeated digits only works when length ≤ 10",
     }
 };
 
@@ -186,7 +194,10 @@ const els = {
     langSwitch: $("langSwitch"),
     qrcodeContainer: $("qrcodeContainer"),
     qrLabel: $("qrLabel"),
-    qrZoomBtn: $("qrZoomBtn")
+    qrZoomBtn: $("qrZoomBtn"),
+    excludeConsecutive: $("excludeConsecutive"),
+    excludeRepeated: $("excludeRepeated"),
+    pinOptionsHint: $("pinOptionsHint") 
 };
 
 let currentMode = 'password';
@@ -274,6 +285,9 @@ function clampInt(value, min, max, fallback) {
 
 function setMode(mode) {
     currentMode = mode;
+    // 始终显示二维码面板（PIN 和普通密码都显示）
+    document.getElementById('qrcodePanel').style.display = 'block';
+
     if (mode === 'password') {
         els.modePassword.classList.add('active');
         els.modePin.classList.remove('active');
@@ -281,7 +295,6 @@ function setMode(mode) {
         els.pinLengthPanel.classList.add('hidden');
         els.charsetPanel.classList.remove('hidden');
         els.advancedPanel.classList.remove('hidden');
-        document.getElementById('qrcodePanel').style.display = 'block';
     } else {
         els.modePin.classList.add('active');
         els.modePassword.classList.remove('active');
@@ -289,7 +302,6 @@ function setMode(mode) {
         els.pinLengthPanel.classList.remove('hidden');
         els.charsetPanel.classList.add('hidden');
         els.advancedPanel.classList.add('hidden');
-        document.getElementById('qrcodePanel').style.display = 'none';
     }
     updateMobileHint();
     generate();
@@ -385,17 +397,41 @@ function generateMobilePassword(length, categories, effectivePool) {
     return chars.join('');
 }
 
-function generatePin(length) {
-    let out = "";
-    for (let i = 0; i < length; i++) out += randomChar(DIGITS);
-    return out;
+function generatePin(length, excludeConsecutive, excludeRepeated) {
+    let attempts = 0;
+    const maxAttempts = 1000;
+    let pin;
+    do {
+        let out = "";
+        for (let i = 0; i < length; i++) out += randomChar(DIGITS);
+        pin = out;
+        if (excludeConsecutive) {
+            let consecutive = false;
+            for (let i = 0; i < pin.length - 1; i++) {
+                if (pin[i] === pin[i+1]) { consecutive = true; break; }
+            }
+            if (consecutive) continue;
+        }
+        if (excludeRepeated) {
+            const set = new Set(pin);
+            if (set.size !== pin.length) continue;
+        }
+        break;
+    } while (attempts++ < maxAttempts);
+    if (attempts >= maxAttempts) {
+        // 极低概率，回退为普通生成（不满足过滤）
+        let fallback = "";
+        for (let i = 0; i < length; i++) fallback += randomChar(DIGITS);
+        return fallback;
+    }
+    return pin;
 }
 
 function escapeHtml(str) {
     return str.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 }
 
-// ---- 二维码生成（默认 400×400，显示为 img） ----
+// ---- 二维码生成（默认 445×445，显示为 img） ----
 function generateQRCode(text) {
     const container = els.qrcodeContainer;
     container.innerHTML = '';
@@ -410,8 +446,8 @@ function generateQRCode(text) {
     document.body.appendChild(tempDiv);
     const qr = new QRCode(tempDiv, {
         text: text,
-        width: 440,
-        height: 440,
+        width: 445,
+        height: 445,
         colorDark: '#000000',
         colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.L
@@ -610,12 +646,29 @@ function generate() {
         removedNames = [];
     try {
         if (currentMode === 'pin') {
-            length = clampInt(els.pinLength.value, 3, 32, 6);
-            els.pinLength.value = length;
-            poolLen = 10;
-            selectedNames = [t('categoryDigits')];
-            list = Array.from({ length: count }, () => generatePin(length));
-        } else {
+                length = clampInt(els.pinLength.value, 3, 32, 6);
+                els.pinLength.value = length;
+                poolLen = 10;
+                selectedNames = [t('categoryDigits')];
+
+                // 读取 PIN 选项
+                const excludeConsecutive = els.excludeConsecutive.checked;
+                let excludeRepeated = els.excludeRepeated.checked;
+
+                // 如果长度 > 10 且排除重复被勾选，自动取消并提示
+                if (length > 10 && excludeRepeated) {
+                    els.excludeRepeated.checked = false;
+                    excludeRepeated = false;
+                    els.pinOptionsHint.textContent = "⚠️ " + t('pinOptionsHint');
+                    els.pinOptionsHint.style.color = "var(--warning)";
+                } else {
+                    els.pinOptionsHint.textContent = t('pinOptionsHint');
+                    els.pinOptionsHint.style.color = "";
+                }
+
+                list = Array.from({ length: count }, () => generatePin(length, excludeConsecutive, excludeRepeated));
+            } 
+        else {
             const { pool, categories } = buildPool();
             const filtered = applyFilters(pool, categories);
             const effectivePool = filtered.pool,
@@ -732,7 +785,7 @@ $("countUp").addEventListener("click", () => setStepperValue(els.count, 1, 1, 16
     el.addEventListener("blur", generate);
 });
 
-[els.lower, els.upper, els.digits, els.special, els.specialChars, els.easySpeak, els.easyRead, els.easyMobile].forEach(el => {
+[els.lower, els.upper, els.digits, els.special, els.specialChars, els.easySpeak, els.easyRead, els.easyMobile, els.excludeConsecutive, els.excludeRepeated].forEach(el => {
     el.addEventListener("change", handleCheckboxChange);
     if (el === els.specialChars) {
         el.addEventListener("input", generate);
