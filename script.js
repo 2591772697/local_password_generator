@@ -410,8 +410,8 @@ function generateQRCode(text) {
     document.body.appendChild(tempDiv);
     const qr = new QRCode(tempDiv, {
         text: text,
-        width: 420,
-        height: 420,
+        width: 440,
+        height: 440,
         colorDark: '#000000',
         colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.L
@@ -427,8 +427,8 @@ function generateQRCode(text) {
     const wrapper = document.createElement('div');
     wrapper.style.display = 'inline-block';
     wrapper.style.background = '#ffffff';
-    wrapper.style.padding = '10px';          // 更宽的白边
-    wrapper.style.border = '16px solid #fed400';  // 更粗、颜色更深
+    wrapper.style.padding = '12px';          // 更宽的白边
+    wrapper.style.border = '17px solid #fed400';  // 更粗、颜色更深
     wrapper.style.borderRadius = '8px';
     wrapper.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
     wrapper.appendChild(img);
@@ -455,8 +455,8 @@ function openQRCodeInNewTab() {
     document.body.appendChild(tempDiv);
     const qr = new QRCode(tempDiv, {
         text: text,
-        width: 730,
-        height: 730,
+        width: 720,
+        height: 720,
         colorDark: '#000000',
         colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.L
@@ -475,8 +475,8 @@ function openQRCodeInNewTab() {
             .qr-wrapper {
                 display:inline-block;
                 background: #ffffff;
-                padding: 30px;
-                border: 16px solid #1d4ed8;
+                padding: 18px;
+                border: 18px solid #1d4ed8;
                 border-radius: 16px;
                 box-shadow: 0 4px 20px rgba(0,0,0,0.15);
             }
