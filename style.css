@@ -614,26 +614,38 @@ button:focus-visible {
     }
 }
 
-/* ===== 日间主题样式 ===== */
+/* ===== 日间主题样式 — 森林莫兰迪色 ===== */
 body.light-theme {
-    --bg: #f0f4f8;
-    --panel: #ffffff;
-    --text: #1e293b;
-    --muted: #475569;
-    --border: #cbd5e1;
-    --chip: #e2e8f0;
-    --btn: #94a3b8;
-    --shadow: 0 20px 60px rgba(0, 0, 0, .1);
-    background: linear-gradient(180deg, #f0f4f8 0%, #e2e8f0 100%);
+    /* 主色变量 */
+    --bg: #e5efe0;
+    --panel: #f5f8f2;
+    --text: #2c3e2f;
+    --muted: #4a5b4c;
+    --border: #bcc9b7;
+    --chip: #dae3d5;
+    --btn: #a0b69a;
+    --shadow: 0 20px 60px rgba(0, 0, 0, .08);
+
+    /* 强调色改为柔和绿（莫兰迪风格） */
+    --accent: #6b8f6b;
+    --accent2: #5a7d5a;
+    --warning: #b8a35c;      /* 警告色也调暗一些 */
+    --danger: #b56a6a;
+
+    background: linear-gradient(180deg, #e5efe0 0%, #d4dfd0 100%);
 }
+
+/* 面板和卡片 */
 body.light-theme .card {
-    background: rgba(255, 255, 255, .92);
+    background: rgba(245, 248, 242, .92);
     border-color: var(--border);
 }
 body.light-theme .panel {
-    background: rgba(241, 245, 249, .8);
+    background: rgba(235, 242, 230, .8);
     border-color: var(--border);
 }
+
+/* 输入框和输出框 */
 body.light-theme .stepper input,
 body.light-theme input[type="text"],
 body.light-theme textarea,
@@ -642,39 +654,69 @@ body.light-theme .out-item {
     border-color: var(--border);
     color: var(--text);
 }
+
+/* Chip 标签 */
 body.light-theme .chip {
     background: var(--chip);
     border-color: var(--border);
     color: var(--text);
 }
+
+/* 复选框 */
 body.light-theme .cb__control {
     background: #ffffff;
-    border-color: var(--cb-border);
+    border-color: var(--border);
 }
+body.light-theme .cb__control {
+    background: #ffffff;
+    border-color: var(--border);
+}
+
+/* 模式切换按钮 */
 body.light-theme .mode-btn {
     color: var(--muted);
 }
 body.light-theme .mode-btn.active {
     background: var(--accent);
-    color: #0f172a;
+    color: #ffffff;  /* 激活时文字白色，更清晰 */
 }
+
+/* 提示文字 */
 body.light-theme .hint {
     color: var(--muted);
 }
+
+/* 强度面板 */
 body.light-theme .strength-panel {
-    background: rgba(241, 245, 249, .8);
+    background: rgba(235, 242, 230, .8);
     border-color: var(--border);
 }
+
+/* 统计徽章 */
 body.light-theme .badge {
     background: rgba(148, 163, 184, .1);
 }
 
-/* 新增：日间模式下复选框 hover 文字颜色 */
+/* ---- 修复复选框 hover 文字变白的问题 ---- */
 body.light-theme .check:hover .cb__label {
-    color: #0b1220;
+    color: #1a2b1d;  /* 更深的森林色 */
 }
 
-/* 新增：日间模式下密码文本颜色加深 */
+/* ---- 密码文本颜色加深 ---- */
 body.light-theme .pw {
-    color: #1e293b;
+    color: var(--text);
+}
+
+/* ---- 按钮颜色适配（保持与强调色统一） ---- */
+body.light-theme button {
+    background: var(--accent);
+}
+body.light-theme button.success {
+    background: var(--accent2);
+}
+body.light-theme button.secondary {
+    background: var(--btn);
+}
+body.light-theme button:hover {
+    opacity: .85;
 }
