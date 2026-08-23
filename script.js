@@ -5,6 +5,136 @@ const EXCLUDE_SPOKEN = new Set("lI1oO0B8S5Z2g9qG6T7".split(""));
 const EXCLUDE_SIMILAR = new Set("lI1|0Oo5Ss8B2Zz6G9gq".split(""));
 const EXCLUDE_MOBILE = new Set([..."ABCDEFGHIJKLMNOPQRSTUVWXYZ", ..."!@#$%^&*()-_=+[]{};:,.?/~`\"\\|<>"]);
 
+// ===== 语言翻译表 =====
+const translations = {
+    zh: {
+        appTitle: "🔐 密码生成器 V8",
+        appSub: "PIN 模式、智能强度、字符集强制覆盖、高级过滤；智能手机模式自动互斥。",
+        modePassword: "🔑 普通密码",
+        modePin: "🔢 PIN 密码",
+        pwLengthLabel: "密码位数",
+        lengthHint: "建议 8~32 位；默认 10 位。",
+        pinLengthLabel: "PIN 位数",
+        pinHint: "纯数字 PIN，支持 3~32 位；默认 6 位。",
+        countLabel: "生成组数（1~10）",
+        countHint: "一次生成多组，直接复制全部结果即可。",
+        charsetLabel: "字符集",
+        charsetTag: "（勾选 N 种则密码至少含 N 位，每种至少 1 个）",
+        lowerLabel: "小写字母 a–z",
+        upperLabel: "大写字母 A–Z",
+        digitsLabel: "数字 0–9",
+        specialLabel: "特殊字符",
+        specialCharsLabel: "特殊字符内容",
+        specialHint: "勾选“特殊字符”后，这里的字符会被纳入生成池；也可以自己删改内容。",
+        advancedLabel: "高级选项",
+        easySpeakLabel: "易于朗读（避免歧义字符）",
+        easyReadLabel: "易于阅读（避免相似字符）",
+        easyMobileLabel: "智能手机上输入简单（自动互斥大写与特殊字符）",
+        waiting: "等待生成",
+        poolPrefix: "字符池：",
+        generateBtn: "✨ 生成密码",
+        copyAllBtn: "📋 复制全部",
+        clearBtn: "🗑️ 清空",
+        strengthTitle: "🔍 密码强度检测",
+        strengthScoreLabel: "密码强度",
+        strengthVeryWeak: "非常弱",
+        strengthWeak: "弱",
+        strengthMedium: "中等",
+        strengthStrong: "强",
+        strengthExcellent: "极强",
+        bits: "bits",
+        diversityLabel: "字符多样性",
+        poolSizeLabel: "字符池",
+        theoreticalEntropy: "理论熵",
+        effectiveEntropy: "有效熵",
+        penaltyLabel: "惩罚",
+        copiedSingle: "✅ 已复制第 {index} 组密码。",
+        copiedAll: "📋 已复制全部结果到剪贴板。",
+        noContent: "没有可复制的内容。",
+        generateFailed: "生成失败",
+        filterHintMobile: "📱 智能手机简单模式下，大写字母已自动取消（与特殊字符互斥）。",
+        filterHintRemoved: "高级选项已过滤掉：{names}（该类别无可用字符）",
+        lengthAutoAdjusted: "已自动调整为最小位数 {minLen}（有效字符集 {minLen} 种）。",
+        errorEmptySpecial: "你勾选了特殊字符，但字符内容为空。",
+        errorNoCharset: "请至少选择一种字符集。",
+        errorFilterNoPool: "高级选项过滤后没有可用字符，请调整选项。",
+        errorFilterNoCategory: "高级选项过滤后没有可用字符类别，请调整选项。",
+        errorLengthTooShort: "当前有效字符集 {n} 种，密码位数不能小于 {n}。",
+        repeatPenalty: "重复字符",
+        sequencePenalty: "连续/键盘序列",
+        allSamePenalty: "全同字符 -90%",
+        tooShortPenalty: "长度过短",
+        singleTypePenalty: "字符单一 -30%",
+        generationSuccess: "已生成 {count} 组，每组 {length} 位",
+        strengthScorePrefix: "强度",
+        strengthDetails: "详情",
+        // 以下为动态拼接部分，不直接使用
+    },
+    en: {
+        appTitle: "🔐 Password Generator V8",
+        appSub: "PIN mode, intelligent strength, charset enforcement, advanced filters; smartphone mode auto-excludes.",
+        modePassword: "🔑 Password",
+        modePin: "🔢 PIN",
+        pwLengthLabel: "Password Length",
+        lengthHint: "Recommended 8–32; default 10.",
+        pinLengthLabel: "PIN Length",
+        pinHint: "Numeric PIN, 3–32 digits; default 6.",
+        countLabel: "Number of passwords (1–10)",
+        countHint: "Generate multiple at once, copy all.",
+        charsetLabel: "Character Set",
+        charsetTag: "(Checking N types ensures at least N characters, one from each)",
+        lowerLabel: "Lowercase a–z",
+        upperLabel: "Uppercase A–Z",
+        digitsLabel: "Digits 0–9",
+        specialLabel: "Special characters",
+        specialCharsLabel: "Special characters content",
+        specialHint: "When 'Special characters' is checked, these characters are included; you can edit them.",
+        advancedLabel: "Advanced Options",
+        easySpeakLabel: "Easy to speak (avoid ambiguous characters)",
+        easyReadLabel: "Easy to read (avoid similar characters)",
+        easyMobileLabel: "Smartphone-friendly (auto-excludes uppercase & special conflict)",
+        waiting: "Waiting",
+        poolPrefix: "Pool: ",
+        generateBtn: "✨ Generate",
+        copyAllBtn: "📋 Copy All",
+        clearBtn: "🗑️ Clear",
+        strengthTitle: "🔍 Password Strength",
+        strengthScoreLabel: "Strength",
+        strengthVeryWeak: "Very Weak",
+        strengthWeak: "Weak",
+        strengthMedium: "Medium",
+        strengthStrong: "Strong",
+        strengthExcellent: "Excellent",
+        bits: "bits",
+        diversityLabel: "Diversity",
+        poolSizeLabel: "Pool size",
+        theoreticalEntropy: "Theoretical entropy",
+        effectiveEntropy: "Effective entropy",
+        penaltyLabel: "Penalty",
+        copiedSingle: "✅ Copied password #{index}.",
+        copiedAll: "📋 Copied all results to clipboard.",
+        noContent: "No content to copy.",
+        generateFailed: "Generation failed",
+        filterHintMobile: "📱 Smartphone mode: uppercase automatically disabled (conflicts with special chars).",
+        filterHintRemoved: "Filtered out: {names} (no usable characters in that category)",
+        lengthAutoAdjusted: "Auto-adjusted to minimum {minLen} (effective character sets: {minLen}).",
+        errorEmptySpecial: "Special characters enabled but content is empty.",
+        errorNoCharset: "Please select at least one character set.",
+        errorFilterNoPool: "No usable characters after filtering. Adjust options.",
+        errorFilterNoCategory: "No usable character categories after filtering. Adjust options.",
+        errorLengthTooShort: "Effective character sets: {n}, password length cannot be less than {n}.",
+        repeatPenalty: "Repeated chars",
+        sequencePenalty: "Sequential/keyboard pattern",
+        allSamePenalty: "All same char -90%",
+        tooShortPenalty: "Too short",
+        singleTypePenalty: "Single type -30%",
+        generationSuccess: "Generated {count} passwords, each {length} chars",
+        strengthScorePrefix: "Strength",
+        strengthDetails: "Details",
+    }
+};
+
+// DOM 引用
 const $ = id => document.getElementById(id);
 const els = {
     length: $("length"),
@@ -34,56 +164,84 @@ const els = {
     charsetPanel: $("charsetPanel"),
     advancedPanel: $("advancedPanel"),
     lengthHint: $("lengthHint"),
-    filterHint: $("filterHint")
+    filterHint: $("filterHint"),
+    langSwitch: $("langSwitch")
 };
+
 let currentMode = 'password';
+let currentLang = 'zh'; // 默认中文
+
+// ===== 语言切换函数 =====
+function switchLanguage(lang) {
+    currentLang = lang;
+    // 遍历所有带有 data-i18n 属性的元素
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key] !== undefined) {
+            // 如果是 input 的 placeholder 或 value 特殊处理，但这里都是文本节点
+            // 对于按钮、标签等，直接设置 innerHTML 保留可能的小标签
+            el.innerHTML = translations[lang][key];
+        }
+    });
+    // 更新强度检测中的固定文本（如果强度面板可见）
+    updateStrengthText();
+    // 更新统计 chip（summaryChip 和 poolChip 已包含 data-i18n，但动态内容需刷新）
+    // 因为生成后会有动态内容，我们会在 generate 里重新设置带翻译的文本
+    // 这里只切换静态文本，动态内容会在 generate 里重新调用
+    // 强制重新生成一次以刷新动态文本
+    generate();
+}
+
+// 更新强度检测中的动态文本（部分文本通过 JS 动态生成）
+function updateStrengthText() {
+    // strengthScore 和 details 内容由 analyzeStrength 动态填充，那里会使用翻译
+    // 我们可以在 analyzeStrength 中直接引用翻译表
+}
+
+// 获取当前语言的某个翻译
+function t(key, params) {
+    let text = translations[currentLang]?.[key] || translations['zh'][key] || key;
+    if (params) {
+        for (let k in params) {
+            text = text.replace(new RegExp(`{${k}}`, 'g'), params[k]);
+        }
+    }
+    return text;
+}
 
 // ===== 新增：智能手机简单模式互斥逻辑 =====
 function enforceMobileSimple() {
-    // 仅在普通密码模式下生效
     if (currentMode !== 'password') return;
-
     const mobile = els.easyMobile.checked;
     const special = els.special.checked;
     const upper = els.upper.checked;
 
-    // 如果开启简单模式，且特殊和大写同时勾选 → 取消大写（保留特殊）
     if (mobile && special && upper) {
         els.upper.checked = false;
-        els.filterHint.textContent = "📱 智能手机简单模式下，大写字母已自动取消（与特殊字符互斥）。";
+        els.filterHint.textContent = t('filterHintMobile');
         els.filterHint.className = "hint warn";
-    } 
-    // 如果关闭简单模式，清除相关提示
-    else if (!mobile) {
-        if (els.filterHint.textContent.includes("智能手机简单模式") || 
-            els.filterHint.textContent.includes("大写字母已自动取消")) {
+    } else if (!mobile) {
+        if (els.filterHint.textContent.includes(t('filterHintMobile'))) {
             els.filterHint.textContent = "";
             els.filterHint.className = "hint";
         }
-    }
-    // 如果简单模式开启但不同时勾选特殊和大写，提示可清除
-    else if (mobile && !(special && upper)) {
-        // 可能之前有提示，但现在是合法状态，清除提示
-        if (els.filterHint.textContent.includes("大写字母已自动取消")) {
+    } else if (mobile && !(special && upper)) {
+        if (els.filterHint.textContent.includes(t('filterHintMobile'))) {
             els.filterHint.textContent = "";
             els.filterHint.className = "hint";
         }
     }
 }
 
-// 在相关复选框变化时调用
 function handleCheckboxChange(e) {
-    // 先执行互斥调整
     enforceMobileSimple();
-    // 特殊字符toggle
     if (e.target === els.special) {
         els.specialChars.disabled = !els.special.checked;
     }
-    // 生成新密码
     generate();
 }
 
-// ---- 以下为原 V6 核心函数（未改动，仅提取） ----
+// ---- 原核心函数（仅修改了 generate 中的文本使用 t()） ----
 function randomInt(maxExclusive) {
     if (maxExclusive <= 0) return 0;
     if (maxExclusive > 0x100000000) throw new Error("随机范围过大");
@@ -127,7 +285,6 @@ function setMode(mode) {
         els.charsetPanel.classList.add('hidden');
         els.advancedPanel.classList.add('hidden');
     }
-    // 切换模式时重新执行互斥检查（针对密码模式）
     enforceMobileSimple();
     generate();
 }
@@ -140,11 +297,11 @@ function buildPool() {
     if (els.digits.checked) { pool += DIGITS; categories.push({ name: "数字", chars: DIGITS }); }
     if (els.special.checked) {
         const s = els.specialChars.value;
-        if (!s.length) throw new Error("你勾选了特殊字符，但字符内容为空。");
+        if (!s.length) throw new Error(t('errorEmptySpecial'));
         pool += s;
         categories.push({ name: "特殊字符", chars: s });
     }
-    if (!pool.length) throw new Error("请至少选择一种字符集。");
+    if (!pool.length) throw new Error(t('errorNoCharset'));
     return { pool, categories };
 }
 
@@ -163,14 +320,14 @@ function applyFilters(pool, categories) {
         if (cat.chars.length === 0) { removed.push(cat.name); return false; }
         return true;
     });
-    if (!filteredPool.length) throw new Error("高级选项过滤后没有可用字符，请调整选项。");
-    if (!filteredCategories.length) throw new Error("高级选项过滤后没有可用字符类别，请调整选项。");
+    if (!filteredPool.length) throw new Error(t('errorFilterNoPool'));
+    if (!filteredCategories.length) throw new Error(t('errorFilterNoCategory'));
     return { pool: filteredPool, categories: filteredCategories, removed };
 }
 
 function generatePassword(pool, length, categories) {
     const n = categories.length;
-    if (length < n) throw new Error(`当前有效字符集 ${n} 种，密码位数不能小于 ${n}。`);
+    if (length < n) throw new Error(t('errorLengthTooShort', { n }));
     const result = categories.map(cat => randomChar(cat.chars));
     for (let i = n; i < length; i++) result.push(randomChar(pool));
     shuffle(result);
@@ -189,15 +346,15 @@ function escapeHtml(str) {
 
 function renderOutput(list) {
     els.output.innerHTML = list.map((pw, idx) =>
-        `<div class="out-item"><div class="pw">${escapeHtml(pw)}</div><button class="mini" data-copy="${idx}">复制</button></div>`
+        `<div class="out-item"><div class="pw">${escapeHtml(pw)}</div><button class="mini" data-copy="${idx}">${t('copySingle')}</button></div>`
     ).join("");
     els.output.querySelectorAll("[data-copy]").forEach(btn => {
         btn.addEventListener("click", async () => {
             const index = Number(btn.getAttribute("data-copy"));
             await navigator.clipboard.writeText(list[index]);
-            els.error.textContent = `✅ 已复制第 ${index+1} 组密码。`;
+            els.error.textContent = t('copiedSingle', { index: index+1 });
             setTimeout(() => {
-                if (els.error.textContent === `✅ 已复制第 ${index+1} 组密码。`) els.error.textContent = "";
+                if (els.error.textContent === t('copiedSingle', { index: index+1 })) els.error.textContent = "";
             }, 1500);
         });
     });
@@ -206,17 +363,18 @@ function renderOutput(list) {
 
 function renderStats(selectedNames, poolLen, length, count, removedNames) {
     const badges = [
-        `<span class="badge">字符集：${selectedNames.join(" / ")||"数字"}</span>`,
-        `<span class="badge">字符池大小：${poolLen}</span>`,
-        `<span class="badge">位数：${length}</span>`,
-        `<span class="badge">组数：${count}</span>`
+        `<span class="badge">${t('charsetLabel')}：${selectedNames.join(" / ")||"数字"}</span>`,
+        `<span class="badge">${t('poolSizeLabel')}：${poolLen}</span>`,
+        `<span class="badge">${t('pwLengthLabel')}：${length}</span>`,
+        `<span class="badge">${t('countLabel')}：${count}</span>`
     ];
-    if (removedNames && removedNames.length) badges.push(
-        `<span class="badge" style="color:var(--warning);border-color:var(--warning);">已过滤：${removedNames.join("、")}</span>`
-    );
+    if (removedNames && removedNames.length) {
+        const hint = t('filterHintRemoved', { names: removedNames.join("、") });
+        badges.push(`<span class="badge" style="color:var(--warning);border-color:var(--warning);">${hint}</span>`);
+    }
     els.stats.innerHTML = badges.join("");
-    els.poolChip.textContent = `字符池：${poolLen}`;
-    els.summaryChip.textContent = `已生成 ${count} 组，每组 ${length} 位`;
+    els.poolChip.textContent = t('poolPrefix') + poolLen;
+    els.summaryChip.textContent = t('generationSuccess', { count, length });
 }
 
 function analyzeStrength(password) {
@@ -237,7 +395,7 @@ function analyzeStrength(password) {
         penalties = 0,
         reasons = [];
     const repeats = len - new Set(password).size;
-    if (repeats > 0) { penalties += repeats * 0.5; reasons.push(`重复字符 -${(repeats*0.5).toFixed(1)} bits`); }
+    if (repeats > 0) { penalties += repeats * 0.5; reasons.push(`${t('repeatPenalty')} -${(repeats*0.5).toFixed(1)} bits`); }
     const sequences = ["abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "0123456789", "qwertyuiop",
         "asdfghjkl", "zxcvbnm"
     ];
@@ -247,26 +405,29 @@ function analyzeStrength(password) {
             if (seq.includes(password.slice(i, i + 3))) seqPenalty += 3;
         }
     }
-    if (seqPenalty > 0) { penalties += seqPenalty; reasons.push(`连续/键盘序列 -${seqPenalty.toFixed(1)} bits`); }
-    if (new Set(password).size === 1) { penalties += entropy * 0.9; reasons.push("全同字符 -90%"); }
-    if (len < 8) { penalties += (8 - len) * 2; reasons.push(`长度过短 -${((8-len)*2).toFixed(1)} bits`); }
+    if (seqPenalty > 0) { penalties += seqPenalty; reasons.push(`${t('sequencePenalty')} -${seqPenalty.toFixed(1)} bits`); }
+    if (new Set(password).size === 1) { penalties += entropy * 0.9; reasons.push(t('allSamePenalty')); }
+    if (len < 8) { penalties += (8 - len) * 2; reasons.push(`${t('tooShortPenalty')} -${((8-len)*2).toFixed(1)} bits`); }
     const variety = [hasLower, hasUpper, hasDigit, hasSpecial].filter(Boolean).length;
-    if (variety === 1 && len > 6) { penalties += len * 0.3; reasons.push("字符单一 -30%"); }
+    if (variety === 1 && len > 6) { penalties += len * 0.3; reasons.push(t('singleTypePenalty')); }
     let finalEntropy = Math.max(0, entropy - penalties);
     let grade, labelClass, barClass, percent;
-    if (finalEntropy < 28) { grade = "非常弱"; labelClass = "strength-weak"; barClass = "bar-weak"; percent = Math.min(100, (finalEntropy / 28) * 20); } 
-    else if (finalEntropy < 48) { grade = "弱"; labelClass = "strength-fair"; barClass = "bar-fair"; percent = 20 + ((finalEntropy - 28) / 20) * 20; } 
-    else if (finalEntropy < 64) { grade = "中等"; labelClass = "strength-good"; barClass = "bar-good"; percent = 40 + ((finalEntropy - 48) / 16) * 20; } 
-    else if (finalEntropy < 128) { grade = "强"; labelClass = "strength-strong"; barClass = "bar-strong"; percent = 60 + ((finalEntropy - 64) / 64) * 20; } 
-    else { grade = "极强"; labelClass = "strength-excellent"; barClass = "bar-excellent"; percent = 80 + Math.min(20, (finalEntropy - 128) / 128 * 20); }
-    els.strengthScore.textContent = `${grade} · ${finalEntropy.toFixed(1)} bits`;
+    if (finalEntropy < 28) { grade = t('strengthVeryWeak'); labelClass = "strength-weak"; barClass = "bar-weak"; percent = Math.min(100, (finalEntropy / 28) * 20); } 
+    else if (finalEntropy < 48) { grade = t('strengthWeak'); labelClass = "strength-fair"; barClass = "bar-fair"; percent = 20 + ((finalEntropy - 28) / 20) * 20; } 
+    else if (finalEntropy < 64) { grade = t('strengthMedium'); labelClass = "strength-good"; barClass = "bar-good"; percent = 40 + ((finalEntropy - 48) / 16) * 20; } 
+    else if (finalEntropy < 128) { grade = t('strengthStrong'); labelClass = "strength-strong"; barClass = "bar-strong"; percent = 60 + ((finalEntropy - 64) / 64) * 20; } 
+    else { grade = t('strengthExcellent'); labelClass = "strength-excellent"; barClass = "bar-excellent"; percent = 80 + Math.min(20, (finalEntropy - 128) / 128 * 20); }
+    els.strengthScore.textContent = `${grade} · ${finalEntropy.toFixed(1)} ${t('bits')}`;
     els.strengthScore.className = `strength-score ${labelClass}`;
     els.strengthBar.className = `strength-bar-fill ${barClass}`;
     els.strengthBar.style.width = `${percent}%`;
-    const detailItems = [`字符多样性：${variety}/4`, `字符池：${poolSize}`, `理论熵：${entropy.toFixed(1)} bits`,
-        `有效熵：${finalEntropy.toFixed(1)} bits`
+    const detailItems = [
+        `${t('diversityLabel')}：${variety}/4`,
+        `${t('poolSizeLabel')}：${poolSize}`,
+        `${t('theoreticalEntropy')}：${entropy.toFixed(1)} ${t('bits')}`,
+        `${t('effectiveEntropy')}：${finalEntropy.toFixed(1)} ${t('bits')}`
     ];
-    if (reasons.length) detailItems.push(`惩罚：${reasons.join("；")}`);
+    if (reasons.length) detailItems.push(`${t('penaltyLabel')}：${reasons.join("；")}`);
     els.strengthDetails.innerHTML = detailItems.map(s => `<span>${s}</span>`).join("");
 }
 
@@ -299,17 +460,17 @@ function generate() {
             poolLen = effectivePool.length;
             selectedNames = effectiveCategories.map(c => c.name);
             if (removedNames.length) {
-                els.filterHint.textContent = `高级选项已过滤掉：${removedNames.join('、')}（该类别无可用字符）`;
+                els.filterHint.textContent = t('filterHintRemoved', { names: removedNames.join('、') });
                 els.filterHint.className = "hint warn";
             }
             const minLen = effectiveCategories.length;
             if (length < minLen) {
                 length = minLen;
                 els.length.value = length;
-                els.lengthHint.textContent = `已自动调整为最小位数 ${minLen}（有效字符集 ${minLen} 种）。`;
+                els.lengthHint.textContent = t('lengthAutoAdjusted', { minLen });
                 els.lengthHint.style.color = "var(--warning)";
             } else {
-                els.lengthHint.textContent = "建议 8~32 位；默认 16 位。";
+                els.lengthHint.textContent = t('lengthHint');
                 els.lengthHint.style.color = "";
             }
             list = Array.from({ length: count }, () => generatePassword(effectivePool, length, effectiveCategories));
@@ -319,8 +480,8 @@ function generate() {
     } catch (err) {
         els.output.innerHTML = "";
         els.stats.innerHTML = "";
-        els.summaryChip.textContent = "生成失败";
-        els.poolChip.textContent = "字符池：0";
+        els.summaryChip.textContent = t('generateFailed');
+        els.poolChip.textContent = t('poolPrefix') + "0";
         els.strengthPanel.style.display = 'none';
         els.error.textContent = err.message || String(err);
     }
@@ -328,11 +489,11 @@ function generate() {
 
 async function copyAll() {
     const text = Array.from(els.output.querySelectorAll(".pw")).map(el => el.textContent).filter(Boolean).join("\n");
-    if (!text) { els.error.textContent = "没有可复制的内容。"; return; }
+    if (!text) { els.error.textContent = t('noContent'); return; }
     await navigator.clipboard.writeText(text);
-    els.error.textContent = "📋 已复制全部结果到剪贴板。";
+    els.error.textContent = t('copiedAll');
     setTimeout(() => {
-        if (els.error.textContent === "📋 已复制全部结果到剪贴板。") els.error.textContent = "";
+        if (els.error.textContent === t('copiedAll')) els.error.textContent = "";
     }, 1500);
 }
 
@@ -354,8 +515,8 @@ $("clear").addEventListener("click", () => {
     els.output.innerHTML = "";
     els.stats.innerHTML = "";
     els.error.textContent = "";
-    els.summaryChip.textContent = "等待生成";
-    els.poolChip.textContent = "字符池：0";
+    els.summaryChip.textContent = t('waiting');
+    els.poolChip.textContent = t('poolPrefix') + "0";
     els.strengthPanel.style.display = 'none';
     els.filterHint.textContent = "";
     els.filterHint.className = "hint";
@@ -375,19 +536,23 @@ $("countUp").addEventListener("click", () => setStepperValue(els.count, 1, 1, 10
     el.addEventListener("blur", generate);
 });
 
-// 为所有复选框绑定 change 事件（使用统一处理器）
 [els.lower, els.upper, els.digits, els.special, els.specialChars, els.easySpeak, els.easyRead, els.easyMobile].forEach(el => {
     el.addEventListener("change", handleCheckboxChange);
-    // 额外：对于特殊字符输入框，输入时触发生成
     if (el === els.specialChars) {
         el.addEventListener("input", generate);
     }
 });
-
-// 单独处理特殊字符的禁用状态
 els.special.addEventListener("change", function() {
     els.specialChars.disabled = !this.checked;
 });
 
-// 启动
+// ---- 语言切换 ----
+els.langSwitch.addEventListener("change", function() {
+    switchLanguage(this.value);
+});
+
+// ---- 初始化 ----
+// 设置默认语言为英文
+els.langSwitch.value = 'en';
+switchLanguage('en');
 setMode('password');
