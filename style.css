@@ -673,11 +673,18 @@ body.light-theme .cb__control {
 
 /* 模式切换按钮 */
 body.light-theme .mode-btn {
-    color: var(--muted);
+    background: #dbe7d5;
+    color: #243827;
+    border: 1px solid #9aae96;
 }
 body.light-theme .mode-btn.active {
-    background: var(--accent);
+    background: #789873;
     color: #ffffff;
+    border-color: #5f805c;
+}
+body.light-theme .mode-btn:hover:not(.active) {
+    background: #cbdcc5;
+    color: #1a2e1d;
 }
 
 /* 提示文字 */
@@ -715,7 +722,7 @@ body.light-theme button.success {
     background: var(--accent2);
 }
 body.light-theme button.secondary {
-    background: var(--btn);
+    background: #9a7651;
     color: #ffffff;
 }
 
@@ -729,7 +736,7 @@ body.light-theme button.success:hover {
     background: #3a5d3a;          /* 比 --accent2 更深 */
 }
 body.light-theme button.secondary:hover {
-    background: #6a8a6a;          /* 比 --btn 更深 */
+    background: #7f5f3f;
 }
 
 /* 迷你复制按钮（保留一致性） */
