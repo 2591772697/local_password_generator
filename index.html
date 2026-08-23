@@ -86,6 +86,157 @@
             width: 44px;
             min-width: 44px;
         }
+
+        /* ===== 强度检测模态框 ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-box {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 24px;
+            max-width: 700px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+        }
+        .modal-header h2 {
+            margin: 0;
+            font-size: 22px;
+            color: var(--text);
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0 8px;
+        }
+        .modal-close:hover {
+            color: var(--text);
+        }
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .modal-body input[type="password"],
+        .modal-body input[type="text"] {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 18px;
+            font-family: monospace;
+            outline: none;
+            transition: border-color .2s;
+        }
+        .modal-body input:focus {
+            border-color: var(--accent);
+        }
+        .modal-body .toggle-pw {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--muted);
+            cursor: pointer;
+        }
+        .modal-body .toggle-pw input {
+            width: auto;
+        }
+        .strength-report {
+            background: rgba(15,23,42,0.4);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px 20px;
+            font-size: 14px;
+        }
+        .strength-report .label {
+            color: var(--muted);
+        }
+        .strength-report .value {
+            color: var(--text);
+            font-weight: 500;
+            text-align: right;
+        }
+        .strength-report .full-width {
+            grid-column: 1 / -1;
+        }
+        .strength-report .score-bar {
+            height: 8px;
+            background: var(--chip);
+            border-radius: 999px;
+            overflow: hidden;
+            grid-column: 1 / -1;
+        }
+        .strength-report .score-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 999px;
+            transition: width .4s ease;
+        }
+        .strength-report .suggestions {
+            grid-column: 1 / -1;
+            color: var(--warning);
+            font-size: 13px;
+            border-top: 1px solid var(--border);
+            padding-top: 10px;
+            margin-top: 4px;
+        }
+        .strength-report .suggestions ul {
+            margin: 6px 0 0 20px;
+            padding: 0;
+        }
+        .strength-report .suggestions li {
+            margin-bottom: 4px;
+        }
+        body.light-theme .modal-box {
+            background: var(--panel);
+        }
+        body.light-theme .strength-report {
+            background: rgba(240,245,240,0.5);
+        }
+        body.light-theme .modal-body input {
+            background: #ffffff;
+        }
+        @media(max-width: 600px) {
+            .strength-report {
+                grid-template-columns: 1fr;
+            }
+            .strength-report .value {
+                text-align: left;
+            }
+            .modal-box {
+                padding: 16px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -99,14 +250,18 @@
             </div>
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                 <!-- 主题切换按钮 -->
-                    <button id="themeToggle" style="background:var(--chip);border:1px solid var(--border);color:var(--text);border-radius:50%;width:44px;height:44px;font-size:20px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .2s ease;flex-shrink:0;" aria-label="切换主题">
-                        ☀️
-                    </button>
+                <button id="themeToggle" style="background:var(--chip);border:1px solid var(--border);color:var(--text);border-radius:50%;width:44px;height:44px;font-size:20px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .2s ease;flex-shrink:0;" aria-label="切换主题">
+                    ☀️
+                </button>
+                <!-- 新增：专业强度检测按钮 -->
+                <button id="openStrengthChecker" style="background:var(--chip);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px 14px;font-size:14px;cursor:pointer;transition:all .2s ease;flex-shrink:0;" data-i18n="strengthCheckerBtn">
+                    🔍 强度检测
+                </button>
                 <div class="mode-switch">
                     <button class="mode-btn active" id="modePassword" type="button" data-i18n="modePassword">🔑 普通密码</button>
                     <button class="mode-btn" id="modePin" type="button" data-i18n="modePin">🔢 PIN 密码</button>
                 </div>
-                <!-- 新增：语言选择下拉框 -->
+                <!-- 语言选择下拉框 -->
                 <select id="langSwitch" style="background:var(--chip);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px 12px;font-size:14px;cursor:pointer;">
                     <option value="en" selected>🇬🇧 English</option>
                     <option value="zh">🇨🇳 中文</option>
@@ -135,32 +290,32 @@
                 </section>
 
                 <!-- PIN 位数 -->
-                    <section class="panel hidden" id="pinLengthPanel">
-                        <label class="panel-label" for="pinLength" data-i18n="pinLengthLabel">PIN 位数</label>
-                        <div class="stepper">
-                            <button class="stepper-btn" id="pinLengthDown" type="button" aria-label="减少位数">−</button>
-                            <input id="pinLength" type="number" min="3" max="32" value="6" inputmode="numeric" />
-                            <button class="stepper-btn" id="pinLengthUp" type="button" aria-label="增加位数">+</button>
+                <section class="panel hidden" id="pinLengthPanel">
+                    <label class="panel-label" for="pinLength" data-i18n="pinLengthLabel">PIN 位数</label>
+                    <div class="stepper">
+                        <button class="stepper-btn" id="pinLengthDown" type="button" aria-label="减少位数">−</button>
+                        <input id="pinLength" type="number" min="3" max="32" value="6" inputmode="numeric" />
+                        <button class="stepper-btn" id="pinLengthUp" type="button" aria-label="增加位数">+</button>
+                    </div>
+                    <div class="hint" data-i18n="pinHint">纯数字 PIN，支持 3~32 位；默认 6 位。</div>
+                    <!-- 新增 PIN 选项 -->
+                    <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:10px;">
+                        <label class="panel-label" data-i18n="pinOptionsLabel">PIN 选项</label>
+                        <div class="checks">
+                            <label class="check">
+                                <input id="excludeConsecutive" type="checkbox" />
+                                <span class="cb__control"><span class="cb__checkmark">✓</span></span>
+                                <span class="cb__label" data-i18n="excludeConsecutiveLabel">排除连续数字（如 66, 11, 00）</span>
+                            </label>
+                            <label class="check">
+                                <input id="excludeRepeated" type="checkbox" />
+                                <span class="cb__control"><span class="cb__checkmark">✓</span></span>
+                                <span class="cb__label" data-i18n="excludeRepeatedLabel">排除相同数字（每位数字只能出现一次）</span>
+                            </label>
                         </div>
-                        <div class="hint" data-i18n="pinHint">纯数字 PIN，支持 3~32 位；默认 6 位。</div>
-                        <!-- 新增 PIN 选项 -->
-                        <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:10px;">
-                            <label class="panel-label" data-i18n="pinOptionsLabel">PIN 选项</label>
-                            <div class="checks">
-                                <label class="check">
-                                    <input id="excludeConsecutive" type="checkbox" />
-                                    <span class="cb__control"><span class="cb__checkmark">✓</span></span>
-                                    <span class="cb__label" data-i18n="excludeConsecutiveLabel">排除连续数字（如 66, 11, 00）</span>
-                                </label>
-                                <label class="check">
-                                    <input id="excludeRepeated" type="checkbox" />
-                                    <span class="cb__control"><span class="cb__checkmark">✓</span></span>
-                                    <span class="cb__label" data-i18n="excludeRepeatedLabel">排除相同数字（每位数字只能出现一次）</span>
-                                </label>
-                            </div>
-                            <div class="hint" id="pinOptionsHint" data-i18n="pinOptionsHint">排除相同数字仅在位数 ≤ 10 时生效</div>
-                        </div>
-                    </section>
+                        <div class="hint" id="pinOptionsHint" data-i18n="pinOptionsHint">排除相同数字仅在位数 ≤ 10 时生效</div>
+                    </div>
+                </section>
 
                 <!-- 生成组数（1~16） -->
                 <section class="panel">
@@ -202,19 +357,18 @@
                     <div class="hint" id="filterHint"></div>
                 </section>
 
-             
-                    <!-- ===== 二维码显示区域（高级选项正下方） ===== -->
-                    <section class="panel" id="qrcodePanel">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                            <div class="qr-label" id="qrLabel" data-i18n="qrLabel">二维码</div>
-                            <button id="qrZoomBtn" data-i18n="qrZoomLabel" style="background:var(--chip);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:4px 12px;font-size:14px;cursor:pointer;transition:.2s;">
-                                🔍 放大
-                            </button>
-                        </div>
-                        <div class="qr-container" id="qrcodeContainer">
-                            <span style="color:var(--muted);font-size:14px;" data-i18n="qrPlaceholder">点击复制密码后显示二维码</span>
-                        </div>
-                    </section>
+                <!-- ===== 二维码显示区域（高级选项正下方） ===== -->
+                <section class="panel" id="qrcodePanel">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                        <div class="qr-label" id="qrLabel" data-i18n="qrLabel">二维码</div>
+                        <button id="qrZoomBtn" data-i18n="qrZoomLabel" style="background:var(--chip);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:4px 12px;font-size:14px;cursor:pointer;transition:.2s;">
+                            🔍 放大
+                        </button>
+                    </div>
+                    <div class="qr-container" id="qrcodeContainer">
+                        <span style="color:var(--muted);font-size:14px;" data-i18n="qrPlaceholder">点击复制密码后显示二维码</span>
+                    </div>
+                </section>
 
             </div>
 
@@ -265,11 +419,44 @@
 
     </main>
 
+    <!-- ===== 强度检测模态框 ===== -->
+    <div class="modal-overlay" id="strengthModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2 data-i18n="modalTitle">🔍 专业密码强度检测</h2>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <input type="password" id="checkPwInput" placeholder="输入要检测的密码" style="flex:1;" />
+                    <label class="toggle-pw" style="white-space:nowrap;">
+                        <input type="checkbox" id="showPwCheck" /> <span data-i18n="showPw">显示密码</span>
+                    </label>
+                </div>
+                <div id="checkResult" class="strength-report">
+                    <span class="label" data-i18n="lengthLabel">长度</span>
+                    <span class="value" id="rLen">-</span>
+                    <span class="label" data-i18n="charsetLabel">字符种类</span>
+                    <span class="value" id="rTypes">-</span>
+                    <span class="label" data-i18n="theoreticalEntropy">理论熵</span>
+                    <span class="value" id="rEntropy">-</span>
+                    <span class="label" data-i18n="effectiveEntropy">有效熵</span>
+                    <span class="value" id="rEffEntropy">-</span>
+                    <span class="label" data-i18n="scoreLabel">评分</span>
+                    <span class="value" id="rScore">-</span>
+                    <div class="score-bar full-width"><div class="score-fill" id="rScoreBar"></div></div>
+                    <span class="label full-width" data-i18n="crackTimeLabel">破解时间（在线/离线）</span>
+                    <span class="value full-width" id="rCrackTime">-</span>
+                    <div class="suggestions full-width" id="rSuggestions"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
-        <script type="module">
+    <script type="module">
         // 从 CDN 导入 polyfill 函数
         import { polyfillCountryFlagEmojis } from "https://cdn.skypack.dev/country-flag-emoji-polyfill";
-        // 执行 polyfill
         polyfillCountryFlagEmojis();
     </script>
 </body>

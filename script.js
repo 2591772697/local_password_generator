@@ -82,6 +82,28 @@ const translations = {
         excludeConsecutiveLabel: "排除连续数字（如 66, 11, 00）",
         excludeRepeatedLabel: "排除相同数字（每位数字只能出现一次）",
         pinOptionsHint: "排除相同数字仅在位数 ≤ 10 时生效",
+        // 强度检测器
+        strengthCheckerBtn: "🔍 强度检测",
+        modalTitle: "🔍 专业密码强度检测",
+        showPw: "显示密码",
+        lengthLabel: "长度",
+        scoreLabel: "评分",
+        crackTimeLabel: "破解时间估算（在线/离线）",
+        crackTimeOnline: "在线（每秒 1 千次）",
+        crackTimeOffline: "离线（每秒 1 万亿次）",
+        suggestionsLabel: "改进建议",
+        suggestionShort: "密码太短，建议至少 8 位。",
+        suggestionCharset: "增加字符种类（大小写、数字、特殊字符）。",
+        suggestionNoRepeat: "避免重复字符。",
+        suggestionNoSequence: "避免连续或键盘序列（如 'abc', '123', 'qwerty'）。",
+        suggestionWeakCommon: "这是常见弱密码，请换一个。",
+        suggestionExcellent: "密码强度极佳，继续保持！",
+        suggestionGood: "密码强度不错，可考虑再增加长度或特殊字符。",
+        scoreVeryWeak: "非常弱",
+        scoreWeak: "弱",
+        scoreMedium: "中等",
+        scoreStrong: "强",
+        scoreExcellent: "极强",
     },
     en: {
         appTitle: "🔐 Password Generator V8",
@@ -158,6 +180,28 @@ const translations = {
         excludeConsecutiveLabel: "Exclude consecutive digits (e.g., 66, 11, 00)",
         excludeRepeatedLabel: "Exclude repeated digits (each digit can appear only once)",
         pinOptionsHint: "Exclude repeated digits only works when length ≤ 10",
+        // Strength checker
+        strengthCheckerBtn: "🔍 Strength Check",
+        modalTitle: "🔍 Professional Password Strength Checker",
+        showPw: "Show password",
+        lengthLabel: "Length",
+        scoreLabel: "Score",
+        crackTimeLabel: "Estimated crack time (online / offline)",
+        crackTimeOnline: "Online (1k/s)",
+        crackTimeOffline: "Offline (1 trillion/s)",
+        suggestionsLabel: "Suggestions",
+        suggestionShort: "Password too short, use at least 8 characters.",
+        suggestionCharset: "Add more character types (uppercase, digits, special).",
+        suggestionNoRepeat: "Avoid repeated characters.",
+        suggestionNoSequence: "Avoid sequential/keyboard patterns (e.g., 'abc', '123', 'qwerty').",
+        suggestionWeakCommon: "This is a common weak password, choose another.",
+        suggestionExcellent: "Excellent strength! Keep it up.",
+        suggestionGood: "Good strength, consider increasing length or adding special characters.",
+        scoreVeryWeak: "Very Weak",
+        scoreWeak: "Weak",
+        scoreMedium: "Medium",
+        scoreStrong: "Strong",
+        scoreExcellent: "Excellent",
     }
 };
 
@@ -199,7 +243,21 @@ const els = {
     qrZoomBtn: $("qrZoomBtn"),
     excludeConsecutive: $("excludeConsecutive"),
     excludeRepeated: $("excludeRepeated"),
-    pinOptionsHint: $("pinOptionsHint") 
+    pinOptionsHint: $("pinOptionsHint"),
+    // 强度检测器
+    openStrengthChecker: $("openStrengthChecker"),
+    strengthModal: $("strengthModal"),
+    closeModal: $("closeModal"),
+    checkPwInput: $("checkPwInput"),
+    showPwCheck: $("showPwCheck"),
+    rLen: $("rLen"),
+    rTypes: $("rTypes"),
+    rEntropy: $("rEntropy"),
+    rEffEntropy: $("rEffEntropy"),
+    rScore: $("rScore"),
+    rScoreBar: $("rScoreBar"),
+    rCrackTime: $("rCrackTime"),
+    rSuggestions: $("rSuggestions"),
 };
 
 let currentMode = 'password';
@@ -215,6 +273,10 @@ function switchLanguage(lang) {
         }
     });
     generate();
+    // 如果模态框打开，刷新内容
+    if (els.strengthModal.classList.contains('active')) {
+        updateStrengthReport(els.checkPwInput.value);
+    }
 }
 
 function t(key, params) {
@@ -287,9 +349,7 @@ function clampInt(value, min, max, fallback) {
 
 function setMode(mode) {
     currentMode = mode;
-    // 始终显示二维码面板（PIN 和普通密码都显示）
     document.getElementById('qrcodePanel').style.display = 'block';
-
     if (mode === 'password') {
         els.modePassword.classList.add('active');
         els.modePin.classList.remove('active');
@@ -421,7 +481,6 @@ function generatePin(length, excludeConsecutive, excludeRepeated) {
         break;
     } while (attempts++ < maxAttempts);
     if (attempts >= maxAttempts) {
-        // 极低概率，回退为普通生成（不满足过滤）
         let fallback = "";
         for (let i = 0; i < length; i++) fallback += randomChar(DIGITS);
         return fallback;
@@ -433,7 +492,7 @@ function escapeHtml(str) {
     return str.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 }
 
-// ---- 二维码生成（默认 450×450，显示为 img） ----
+// ---- 二维码生成 ----
 function generateQRCode(text) {
     const container = els.qrcodeContainer;
     container.innerHTML = '';
@@ -442,7 +501,6 @@ function generateQRCode(text) {
         container._qrText = '';
         return;
     }
-    // 临时容器生成 canvas
     const tempDiv = document.createElement('div');
     tempDiv.style.display = 'none';
     document.body.appendChild(tempDiv);
@@ -461,16 +519,14 @@ function generateQRCode(text) {
     img.style.width = '100%';
     img.style.height = 'auto';
 
-    // ---------- 增加蓝白外边框 ----------
     const wrapper = document.createElement('div');
     wrapper.style.display = 'inline-block';
     wrapper.style.background = '#ffffff';
-    wrapper.style.padding = '10px';          // 更宽的白边
-    wrapper.style.border = '19px solid #fed400';  // 更粗、颜色更深
+    wrapper.style.padding = '10px';
+    wrapper.style.border = '19px solid #fed400';
     wrapper.style.borderRadius = '8px';
     wrapper.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
     wrapper.appendChild(img);
-    // ---------------------------------
 
     container.appendChild(wrapper);
     container._qrText = text;
@@ -478,7 +534,6 @@ function generateQRCode(text) {
     document.body.removeChild(tempDiv);
 }
 
-// ---- 放大二维码：新标签页打开 800×800 ----
 function openQRCodeInNewTab() {
     const container = els.qrcodeContainer;
     const text = container._qrText;
@@ -487,7 +542,6 @@ function openQRCodeInNewTab() {
         setTimeout(() => els.error.textContent = '', 1500);
         return;
     }
-    // 生成 730 * 730 的二维码
     const tempDiv = document.createElement('div');
     tempDiv.style.display = 'none';
     document.body.appendChild(tempDiv);
@@ -501,8 +555,6 @@ function openQRCodeInNewTab() {
     });
     const canvas = tempDiv.querySelector('canvas');
     const dataUrl = canvas.toDataURL('image/png');
-    
-    // 在新窗口中显示带蓝白边框的大图
     const win = window.open();
     win.document.write(`
         <!DOCTYPE html>
@@ -568,6 +620,7 @@ function renderStats(selectedNames, poolLen, length, count, removedNames) {
     els.summaryChip.textContent = t('generationSuccess', { count, length });
 }
 
+// ---- 强度分析（复用并增强） ----
 function analyzeStrength(password) {
     if (!password) { els.strengthPanel.style.display = 'none'; return; }
     els.strengthPanel.style.display = 'block';
@@ -622,6 +675,96 @@ function analyzeStrength(password) {
     els.strengthDetails.innerHTML = detailItems.map(s => `<span>${s}</span>`).join("");
 }
 
+// ---- 专业强度检测器（模态框专用，更详细） ----
+function updateStrengthReport(password) {
+    const tKey = (key, params) => t(key, params);
+    const len = password.length;
+    const hasLower = /[a-z]/.test(password);
+    const hasUpper = /[A-Z]/.test(password);
+    const hasDigit = /\d/.test(password);
+    const hasSpecial = /[^a-zA-Z0-9]/.test(password);
+    const variety = [hasLower, hasUpper, hasDigit, hasSpecial].filter(Boolean).length;
+    let poolSize = 0;
+    if (hasLower) poolSize += 26;
+    if (hasUpper) poolSize += 26;
+    if (hasDigit) poolSize += 10;
+    if (hasSpecial) poolSize += 33;
+    if (poolSize === 0 && /^\d+$/.test(password)) poolSize = 10;
+
+    let entropy = len * Math.log2(poolSize || 1);
+    let penalties = 0;
+    const reasons = [];
+    const repeats = len - new Set(password).size;
+    if (repeats > 0) { penalties += repeats * 0.5; reasons.push(tKey('repeatPenalty') + ` -${(repeats*0.5).toFixed(1)} bits`); }
+    const sequences = ["abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "0123456789", "qwertyuiop", "asdfghjkl", "zxcvbnm"];
+    let seqPenalty = 0;
+    for (let seq of sequences) {
+        for (let i = 0; i < password.length - 2; i++) {
+            if (seq.includes(password.slice(i, i + 3))) seqPenalty += 3;
+        }
+    }
+    if (seqPenalty > 0) { penalties += seqPenalty; reasons.push(tKey('sequencePenalty') + ` -${seqPenalty.toFixed(1)} bits`); }
+    if (new Set(password).size === 1) { penalties += entropy * 0.9; reasons.push(tKey('allSamePenalty')); }
+    if (len < 8) { penalties += (8 - len) * 2; reasons.push(tKey('tooShortPenalty') + ` -${((8-len)*2).toFixed(1)} bits`); }
+    if (variety === 1 && len > 6) { penalties += len * 0.3; reasons.push(tKey('singleTypePenalty')); }
+
+    let finalEntropy = Math.max(0, entropy - penalties);
+    let score = 0, grade, gradeLabel;
+    if (finalEntropy < 28) { grade = 'veryWeak'; score = Math.min(20, (finalEntropy/28)*20); gradeLabel = tKey('scoreVeryWeak'); }
+    else if (finalEntropy < 48) { grade = 'weak'; score = 20 + ((finalEntropy-28)/20)*20; gradeLabel = tKey('scoreWeak'); }
+    else if (finalEntropy < 64) { grade = 'medium'; score = 40 + ((finalEntropy-48)/16)*20; gradeLabel = tKey('scoreMedium'); }
+    else if (finalEntropy < 128) { grade = 'strong'; score = 60 + ((finalEntropy-64)/64)*20; gradeLabel = tKey('scoreStrong'); }
+    else { grade = 'excellent'; score = 80 + Math.min(20, (finalEntropy-128)/128*20); gradeLabel = tKey('scoreExcellent'); }
+    score = Math.min(100, Math.round(score));
+
+    // 破解时间估算
+    const onlineRate = 1000; // 每秒1千次
+    const offlineRate = 1e12; // 每秒1万亿次
+    const totalCombinations = Math.pow(poolSize, len);
+    const onlineSeconds = totalCombinations / onlineRate;
+    const offlineSeconds = totalCombinations / offlineRate;
+    const formatTime = (sec) => {
+        if (sec < 60) return `${Math.round(sec)} 秒`;
+        if (sec < 3600) return `${Math.round(sec/60)} 分钟`;
+        if (sec < 86400) return `${Math.round(sec/3600)} 小时`;
+        if (sec < 31536000) return `${Math.round(sec/86400)} 天`;
+        if (sec < 31536000*100) return `${Math.round(sec/31536000)} 年`;
+        return `> 100 年`;
+    };
+    const onlineStr = formatTime(onlineSeconds);
+    const offlineStr = formatTime(offlineSeconds);
+
+    // 常见弱密码检测
+    const commonWeak = ["password","123456","12345678","123456789","qwerty","abc123","password1","admin","letmein","welcome","monkey","dragon","master","hello","freedom","whatever","trustno1","sunshine","qwertyuiop","iloveyou","princess","rockyou","1234567890","password123"];
+    const isCommon = commonWeak.includes(password.toLowerCase());
+
+    // 生成建议
+    let suggestions = [];
+    if (len < 8) suggestions.push(tKey('suggestionShort'));
+    if (variety < 3) suggestions.push(tKey('suggestionCharset'));
+    if (repeats > 2) suggestions.push(tKey('suggestionNoRepeat'));
+    if (seqPenalty > 0) suggestions.push(tKey('suggestionNoSequence'));
+    if (isCommon) suggestions.push(tKey('suggestionWeakCommon'));
+    if (grade === 'excellent') suggestions.push(tKey('suggestionExcellent'));
+    else if (grade === 'strong' || grade === 'medium') suggestions.push(tKey('suggestionGood'));
+    // 如果无建议但又不强，给一个通用提示
+    if (suggestions.length === 0 && grade !== 'excellent') {
+        suggestions.push(tKey('suggestionCharset'));
+    }
+
+    // 填充UI
+    els.rLen.textContent = len;
+    els.rTypes.textContent = variety + (variety > 0 ? ` (${[hasLower?'小写':'', hasUpper?'大写':'', hasDigit?'数字':'', hasSpecial?'特殊':''].filter(Boolean).join('/')})` : '');
+    els.rEntropy.textContent = entropy.toFixed(1) + ' bits';
+    els.rEffEntropy.textContent = finalEntropy.toFixed(1) + ' bits';
+    els.rScore.textContent = `${score} / 100 (${gradeLabel})`;
+    els.rScoreBar.style.width = score + '%';
+    els.rScoreBar.style.background = score < 40 ? '#ef4444' : score < 60 ? '#f59e0b' : score < 80 ? '#38bdf8' : '#22c55e';
+    els.rCrackTime.innerHTML = `<span style="color:var(--muted);">${tKey('crackTimeOnline')}:</span> ${onlineStr} &nbsp;|&nbsp; <span style="color:var(--muted);">${tKey('crackTimeOffline')}:</span> ${offlineStr}`;
+    els.rSuggestions.innerHTML = `<strong>${tKey('suggestionsLabel')}:</strong><ul>${suggestions.map(s => `<li>${s}</li>`).join('')}</ul>`;
+}
+
+// ---- 生成主函数 ----
 function generate() {
     els.error.textContent = "";
     updateMobileHint();
@@ -648,29 +791,23 @@ function generate() {
         removedNames = [];
     try {
         if (currentMode === 'pin') {
-                length = clampInt(els.pinLength.value, 3, 32, 6);
-                els.pinLength.value = length;
-                poolLen = 10;
-                selectedNames = [t('categoryDigits')];
-
-                // 读取 PIN 选项
-                const excludeConsecutive = els.excludeConsecutive.checked;
-                let excludeRepeated = els.excludeRepeated.checked;
-
-                // 如果长度 > 10 且排除重复被勾选，自动取消并提示
-                if (length > 10 && excludeRepeated) {
-                    els.excludeRepeated.checked = false;
-                    excludeRepeated = false;
-                    els.pinOptionsHint.textContent = "⚠️ " + t('pinOptionsHint');
-                    els.pinOptionsHint.style.color = "var(--warning)";
-                } else {
-                    els.pinOptionsHint.textContent = t('pinOptionsHint');
-                    els.pinOptionsHint.style.color = "";
-                }
-
-                list = Array.from({ length: count }, () => generatePin(length, excludeConsecutive, excludeRepeated));
-            } 
-        else {
+            length = clampInt(els.pinLength.value, 3, 32, 6);
+            els.pinLength.value = length;
+            poolLen = 10;
+            selectedNames = [t('categoryDigits')];
+            const excludeConsecutive = els.excludeConsecutive.checked;
+            let excludeRepeated = els.excludeRepeated.checked;
+            if (length > 10 && excludeRepeated) {
+                els.excludeRepeated.checked = false;
+                excludeRepeated = false;
+                els.pinOptionsHint.textContent = "⚠️ " + t('pinOptionsHint');
+                els.pinOptionsHint.style.color = "var(--warning)";
+            } else {
+                els.pinOptionsHint.textContent = t('pinOptionsHint');
+                els.pinOptionsHint.style.color = "";
+            }
+            list = Array.from({ length: count }, () => generatePin(length, excludeConsecutive, excludeRepeated));
+        } else {
             const { pool, categories } = buildPool();
             const filtered = applyFilters(pool, categories);
             const effectivePool = filtered.pool,
@@ -689,7 +826,6 @@ function generate() {
                 els.lengthHint.textContent = t('lengthHint');
                 els.lengthHint.style.color = "";
             }
-
             const mobileMode = els.easyMobile.checked;
             const generatedList = [];
             for (let i = 0; i < count; i++) {
@@ -705,7 +841,6 @@ function generate() {
         }
         renderOutput(list);
         renderStats(selectedNames, poolLen, length, count, removedNames);
-        // 生成后清空二维码（等待用户点击复制）
         generateQRCode('');
     } catch (err) {
         els.output.innerHTML = "";
@@ -797,8 +932,36 @@ els.special.addEventListener("change", function() {
     els.specialChars.disabled = !this.checked;
 });
 
-// ---- 二维码放大按钮 ----
+// ---- 二维码放大 ----
 els.qrZoomBtn.addEventListener("click", openQRCodeInNewTab);
+
+// ---- 强度检测模态框 ----
+els.openStrengthChecker.addEventListener("click", () => {
+    els.strengthModal.classList.add('active');
+    // 清空输入和结果
+    els.checkPwInput.value = '';
+    els.rLen.textContent = '-';
+    els.rTypes.textContent = '-';
+    els.rEntropy.textContent = '-';
+    els.rEffEntropy.textContent = '-';
+    els.rScore.textContent = '-';
+    els.rScoreBar.style.width = '0%';
+    els.rCrackTime.textContent = '-';
+    els.rSuggestions.innerHTML = '';
+    els.checkPwInput.focus();
+});
+els.closeModal.addEventListener("click", () => {
+    els.strengthModal.classList.remove('active');
+});
+els.strengthModal.addEventListener("click", (e) => {
+    if (e.target === els.strengthModal) els.strengthModal.classList.remove('active');
+});
+els.checkPwInput.addEventListener("input", function() {
+    updateStrengthReport(this.value);
+});
+els.showPwCheck.addEventListener("change", function() {
+    els.checkPwInput.type = this.checked ? 'text' : 'password';
+});
 
 // ---- 语言切换 ----
 els.langSwitch.addEventListener("change", function() {
@@ -822,6 +985,3 @@ themeToggle.addEventListener('click', toggleTheme);
 // (可选) 默认记住用户偏好：如果你希望默认就是日间模式，取消下面这行的注释
 // document.body.classList.add('light-theme');
 // themeToggle.textContent = '🌙';
-
-//  不行，我觉得这不是一件特别难的事情，当我选中“智能手机输入简单时”，先创建一个blank_pw_arr，
-// 然后在生成密码时，先随机先后得从"大写池子"里和"特殊字符池子"各放一个到blank_pw_str里，然后剩下的位数按剩余位数用小写和数字填充，最后再shuffle，再打乱一次str的排序，这样就能保证大写和特殊字符总数不超过2个了。
