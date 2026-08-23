@@ -185,12 +185,12 @@ const els = {
     filterHint: $("filterHint"),
     langSwitch: $("langSwitch"),
     qrcodeContainer: $("qrcodeContainer"),
-    qrLabel: $("qrLabel")
+    qrLabel: $("qrLabel"),
+    qrZoomBtn: $("qrZoomBtn")
 };
 
 let currentMode = 'password';
 let currentLang = 'zh';
-let currentQRCode = null; // 保存二维码实例以便清除
 
 // ===== 语言切换函数 =====
 function switchLanguage(lang) {
@@ -281,7 +281,6 @@ function setMode(mode) {
         els.pinLengthPanel.classList.add('hidden');
         els.charsetPanel.classList.remove('hidden');
         els.advancedPanel.classList.remove('hidden');
-        // 显示二维码面板
         document.getElementById('qrcodePanel').style.display = 'block';
     } else {
         els.modePin.classList.add('active');
@@ -290,7 +289,6 @@ function setMode(mode) {
         els.pinLengthPanel.classList.remove('hidden');
         els.charsetPanel.classList.add('hidden');
         els.advancedPanel.classList.add('hidden');
-        // PIN 模式隐藏二维码面板（因为 PIN 不适用复杂字符）
         document.getElementById('qrcodePanel').style.display = 'none';
     }
     updateMobileHint();
@@ -322,7 +320,6 @@ function buildPool() {
     return { pool, categories };
 }
 
-// ===== applyFilters 不再排除 easyMobile 的字符 =====
 function applyFilters(pool, categories) {
     const exclude = new Set();
     if (els.easySpeak.checked) EXCLUDE_SPOKEN.forEach(c => exclude.add(c));
@@ -352,7 +349,6 @@ function generatePassword(pool, length, categories) {
     return result.join("");
 }
 
-// ===== 智能手机简单模式生成（构造法） =====
 function generateMobilePassword(length, categories, effectivePool) {
     const hasUpper = categories.some(c => c.name === getCategoryName('upper'));
     const hasSpecial = categories.some(c => c.name === getCategoryName('special'));
@@ -399,31 +395,70 @@ function escapeHtml(str) {
     return str.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 }
 
-// ---- 二维码生成 ----
+// ---- 二维码生成（默认 300×300，显示为 img） ----
 function generateQRCode(text) {
     const container = els.qrcodeContainer;
-    // 清空容器
     container.innerHTML = '';
     if (!text) {
         container.innerHTML = `<span style="color:var(--muted);font-size:14px;" data-i18n="qrPlaceholder">${t('qrPlaceholder')}</span>`;
+        // 清除存储的文本
+        container._qrText = '';
         return;
     }
-    // 创建二维码（尺寸 80x80）
-    try {
-        currentQRCode = new QRCode(container, {
-            text: text,
-            width: 80,
-            height: 80,
-            colorDark: '#1a2e1d',
-            colorLight: '#ffffff',
-            correctLevel: QRCode.CorrectLevel.L
-        });
-        // 在二维码上方显示文本预览（可选）
-        // 但用户只要求二维码，不加额外文字
-    } catch(e) {
-        container.innerHTML = `<span style="color:var(--danger);">❌ QR 生成失败</span>`;
-        console.error(e);
+    // 临时容器生成 canvas
+    const tempDiv = document.createElement('div');
+    tempDiv.style.display = 'none';
+    document.body.appendChild(tempDiv);
+    const qr = new QRCode(tempDiv, {
+        text: text,
+        width: 300,
+        height: 300,
+        colorDark: '#1a2e1d',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.L
+    });
+    const canvas = tempDiv.querySelector('canvas');
+    const img = document.createElement('img');
+    img.src = canvas.toDataURL('image/png');
+    img.style.maxWidth = '100%';
+    img.style.height = 'auto';
+    img.style.display = 'block';
+    container.appendChild(img);
+    // 保存文本和 img 引用
+    container._qrText = text;
+    container._qrImg = img;
+    document.body.removeChild(tempDiv);
+}
+
+// ---- 放大二维码：新标签页打开 600×600 ----
+function openQRCodeInNewTab() {
+    const container = els.qrcodeContainer;
+    const text = container._qrText;
+    if (!text) {
+        // 没有二维码内容，提示
+        els.error.textContent = t('noContent');
+        setTimeout(() => els.error.textContent = '', 1500);
+        return;
     }
+    // 生成 600×600 的二维码
+    const tempDiv = document.createElement('div');
+    tempDiv.style.display = 'none';
+    document.body.appendChild(tempDiv);
+    const qr = new QRCode(tempDiv, {
+        text: text,
+        width: 600,
+        height: 600,
+        colorDark: '#1a2e1d',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.L
+    });
+    const canvas = tempDiv.querySelector('canvas');
+    const dataUrl = canvas.toDataURL('image/png');
+    // 在新窗口打开
+    const win = window.open();
+    win.document.write(`<img src="${dataUrl}" style="display:block;margin:auto;max-width:100%;max-height:100%;" />`);
+    win.document.title = 'QR Code';
+    document.body.removeChild(tempDiv);
 }
 
 // ---- 渲染输出 ----
@@ -431,7 +466,6 @@ function renderOutput(list) {
     els.output.innerHTML = list.map((pw, idx) =>
         `<div class="out-item"><div class="pw">${escapeHtml(pw)}</div><button class="mini" data-copy="${idx}">${t('copySingle')}</button></div>`
     ).join("");
-    // 绑定单个复制事件
     els.output.querySelectorAll("[data-copy]").forEach(btn => {
         btn.addEventListener("click", async () => {
             const index = Number(btn.getAttribute("data-copy"));
@@ -441,7 +475,6 @@ function renderOutput(list) {
             setTimeout(() => {
                 if (els.error.textContent === t('copiedSingle', { index: index+1 })) els.error.textContent = "";
             }, 1500);
-            // 生成该密码的二维码
             generateQRCode(pw);
         });
     });
@@ -522,13 +555,11 @@ function generate() {
     els.error.textContent = "";
     updateMobileHint();
 
-    // 读取滑块值（密码长度）
     let length = parseInt(els.lengthSlider.value, 10);
     els.lengthDisplay.textContent = length;
     const count = clampInt(els.count.value, 1, 16, 2);
     els.count.value = count;
 
-    // 如果长度为 0，直接报错并清空结果
     if (length === 0) {
         els.output.innerHTML = "";
         els.stats.innerHTML = "";
@@ -536,7 +567,6 @@ function generate() {
         els.poolChip.textContent = t('poolPrefix') + "0";
         els.strengthPanel.style.display = 'none';
         els.error.textContent = t('errorZeroLength');
-        // 清空二维码
         generateQRCode('');
         return;
     }
@@ -553,7 +583,6 @@ function generate() {
             selectedNames = [t('categoryDigits')];
             list = Array.from({ length: count }, () => generatePin(length));
         } else {
-            // 普通密码模式：使用滑块长度
             const { pool, categories } = buildPool();
             const filtered = applyFilters(pool, categories);
             const effectivePool = filtered.pool,
@@ -588,7 +617,7 @@ function generate() {
         }
         renderOutput(list);
         renderStats(selectedNames, poolLen, length, count, removedNames);
-        // 生成后默认清除二维码（或者不生成，等待用户点击复制）
+        // 生成后清空二维码（等待用户点击复制）
         generateQRCode('');
     } catch (err) {
         els.output.innerHTML = "";
@@ -609,7 +638,6 @@ async function copyAll() {
     setTimeout(() => {
         if (els.error.textContent === t('copiedAll')) els.error.textContent = "";
     }, 1500);
-    // 生成全部密码拼接的二维码
     generateQRCode(text);
 }
 
@@ -624,7 +652,6 @@ function setStepperValue(inputEl, delta, min, max) {
     generate();
 }
 
-// ---- 滑块同步 ----
 function updateLengthFromSlider() {
     const val = parseInt(els.lengthSlider.value, 10);
     els.lengthDisplay.textContent = val;
@@ -656,21 +683,16 @@ $("clear").addEventListener("click", () => {
 els.modePassword.addEventListener("click", () => setMode('password'));
 els.modePin.addEventListener("click", () => setMode('pin'));
 
-// 滑块加减按钮
 $("lengthDown").addEventListener("click", () => updateLengthFromStepper(-1));
 $("lengthUp").addEventListener("click", () => updateLengthFromStepper(1));
-// 滑块输入事件
 els.lengthSlider.addEventListener("input", updateLengthFromSlider);
 
-// PIN 长度加减
 $("pinLengthDown").addEventListener("click", () => setStepperValue(els.pinLength, -1, 3, 32));
 $("pinLengthUp").addEventListener("click", () => setStepperValue(els.pinLength, 1, 3, 32));
 
-// 组数加减
 $("countDown").addEventListener("click", () => setStepperValue(els.count, -1, 1, 16));
 $("countUp").addEventListener("click", () => setStepperValue(els.count, 1, 1, 16));
 
-// 其他输入事件
 [els.count, els.pinLength].forEach(el => {
     el.addEventListener("input", generate);
     el.addEventListener("change", generate);
@@ -686,6 +708,9 @@ $("countUp").addEventListener("click", () => setStepperValue(els.count, 1, 1, 16
 els.special.addEventListener("change", function() {
     els.specialChars.disabled = !this.checked;
 });
+
+// ---- 二维码放大按钮 ----
+els.qrZoomBtn.addEventListener("click", openQRCodeInNewTab);
 
 // ---- 语言切换 ----
 els.langSwitch.addEventListener("change", function() {
@@ -705,7 +730,6 @@ function toggleTheme() {
     themeToggle.textContent = isLight ? '🌙' : '☀️';
 }
 themeToggle.addEventListener('click', toggleTheme);
-// 默认暗色
 // 默认暗色，无需额外操作
 // (可选) 默认记住用户偏好：如果你希望默认就是日间模式，取消下面这行的注释
 // document.body.classList.add('light-theme');
