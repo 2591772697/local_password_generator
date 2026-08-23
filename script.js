@@ -395,13 +395,12 @@ function escapeHtml(str) {
     return str.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 }
 
-// ---- 二维码生成（默认 300×300，显示为 img） ----
+// ---- 二维码生成（默认 400×400，显示为 img） ----
 function generateQRCode(text) {
     const container = els.qrcodeContainer;
     container.innerHTML = '';
     if (!text) {
         container.innerHTML = `<span style="color:var(--muted);font-size:14px;" data-i18n="qrPlaceholder">${t('qrPlaceholder')}</span>`;
-        // 清除存储的文本
         container._qrText = '';
         return;
     }
@@ -411,53 +410,87 @@ function generateQRCode(text) {
     document.body.appendChild(tempDiv);
     const qr = new QRCode(tempDiv, {
         text: text,
-        width: 400,
-        height: 400,
-        colorDark: '#1a2e1d',
+        width: 420,
+        height: 420,
+        colorDark: '#000000',
         colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.L
     });
     const canvas = tempDiv.querySelector('canvas');
     const img = document.createElement('img');
     img.src = canvas.toDataURL('image/png');
-    img.style.maxWidth = '100%';
-    img.style.height = 'auto';
     img.style.display = 'block';
-    container.appendChild(img);
-    // 保存文本和 img 引用
+    img.style.width = '100%';
+    img.style.height = 'auto';
+
+    // ---------- 增加蓝白外边框 ----------
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'inline-block';
+    wrapper.style.background = '#ffffff';
+    wrapper.style.padding = '10px';          // 更宽的白边
+    wrapper.style.border = '16px solid #fed400';  // 更粗、颜色更深
+    wrapper.style.borderRadius = '8px';
+    wrapper.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+    wrapper.appendChild(img);
+    // ---------------------------------
+
+    container.appendChild(wrapper);
     container._qrText = text;
     container._qrImg = img;
     document.body.removeChild(tempDiv);
 }
 
-// ---- 放大二维码：新标签页打开 600×600 ----
+// ---- 放大二维码：新标签页打开 800×800 ----
 function openQRCodeInNewTab() {
     const container = els.qrcodeContainer;
     const text = container._qrText;
     if (!text) {
-        // 没有二维码内容，提示
         els.error.textContent = t('noContent');
         setTimeout(() => els.error.textContent = '', 1500);
         return;
     }
-    // 生成 600×600 的二维码
+    // 生成 730 * 730 的二维码
     const tempDiv = document.createElement('div');
     tempDiv.style.display = 'none';
     document.body.appendChild(tempDiv);
     const qr = new QRCode(tempDiv, {
         text: text,
-        width: 800,
-        height: 800,
-        colorDark: '#1a2e1d',
+        width: 730,
+        height: 730,
+        colorDark: '#000000',
         colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.L
     });
     const canvas = tempDiv.querySelector('canvas');
     const dataUrl = canvas.toDataURL('image/png');
-    // 在新窗口打开
+    
+    // 在新窗口中显示带蓝白边框的大图
     const win = window.open();
-    win.document.write(`<img src="${dataUrl}" style="display:block;margin:auto;max-width:100%;max-height:100%;" />`);
-    win.document.title = 'QR Code';
+    win.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>QR Code</title>
+        <style>
+            body { margin:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f4f8; }
+            .qr-wrapper {
+                display:inline-block;
+                background: #ffffff;
+                padding: 30px;
+                border: 16px solid #1d4ed8;
+                border-radius: 16px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            }
+            .qr-wrapper img { display:block; max-width:100%; height:auto; }
+        </style>
+        </head>
+        <body>
+            <div class="qr-wrapper">
+                <img src="${dataUrl}" />
+            </div>
+        </body>
+        </html>
+    `);
+    win.document.close();
     document.body.removeChild(tempDiv);
 }
 
