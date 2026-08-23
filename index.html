@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>密码生成器 V8 — 左右布局 + 智能互斥</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <main class="card">
+
+        <!-- ===== 顶部 ===== -->
+        <div class="top-section">
+            <div class="top-left">
+                <h1>🔐 密码生成器 V8</h1>
+                <p class="sub">PIN 模式、智能强度、字符集强制覆盖、高级过滤；智能手机模式自动互斥；单文件拆分为三文件，便于部署。</p>
+            </div>
+            <div class="mode-switch">
+                <button class="mode-btn active" id="modePassword" type="button">🔑 普通密码</button>
+                <button class="mode-btn" id="modePin" type="button">🔢 PIN 密码</button>
+            </div>
+        </div>
+
+        <!-- ===== 主体：左右两栏 ===== -->
+        <div class="main-layout">
+
+            <!-- ===== 左栏：设置 ===== -->
+            <div class="left-column">
+
+                <!-- 密码位数 -->
+                <section class="panel" id="pwLengthPanel">
+                    <label class="panel-label" for="length">密码位数</label>
+                    <div class="stepper">
+                        <button class="stepper-btn" id="lengthDown" type="button" aria-label="减少位数">−</button>
+                        <input id="length" type="number" min="1" max="256" value="16" inputmode="numeric" />
+                        <button class="stepper-btn" id="lengthUp" type="button" aria-label="增加位数">+</button>
+                    </div>
+                    <div class="hint" id="lengthHint">建议 8~32 位；默认 16 位。</div>
+                </section>
+
+                <!-- PIN 位数 -->
+                <section class="panel hidden" id="pinLengthPanel">
+                    <label class="panel-label" for="pinLength">PIN 位数</label>
+                    <div class="stepper">
+                        <button class="stepper-btn" id="pinLengthDown" type="button" aria-label="减少位数">−</button>
+                        <input id="pinLength" type="number" min="3" max="32" value="6" inputmode="numeric" />
+                        <button class="stepper-btn" id="pinLengthUp" type="button" aria-label="增加位数">+</button>
+                    </div>
+                    <div class="hint">纯数字 PIN，支持 3~32 位；默认 6 位。</div>
+                </section>
+
+                <!-- 生成组数 -->
+                <section class="panel">
+                    <label class="panel-label" for="count">生成组数（1~10）</label>
+                    <div class="stepper">
+                        <button class="stepper-btn" id="countDown" type="button" aria-label="减少组数">−</button>
+                        <input id="count" type="number" min="1" max="10" value="1" inputmode="numeric" />
+                        <button class="stepper-btn" id="countUp" type="button" aria-label="增加组数">+</button>
+                    </div>
+                    <div class="hint">一次生成多组，直接复制全部结果即可。</div>
+                </section>
+
+                <!-- 字符集 -->
+                <section class="panel" id="charsetPanel">
+                    <label class="panel-label">
+                        字符集
+                        <span class="tag">（勾选 N 种则密码至少含 N 位，每种至少 1 个）</span>
+                    </label>
+                    <div class="checks">
+                        <label class="check"><input id="lower" type="checkbox" checked /><span class="cb__control"><span class="cb__checkmark">✓</span></span><span class="cb__label">小写字母 a–z</span></label>
+                        <label class="check"><input id="upper" type="checkbox" checked /><span class="cb__control"><span class="cb__checkmark">✓</span></span><span class="cb__label">大写字母 A–Z</span></label>
+                        <label class="check"><input id="digits" type="checkbox" checked /><span class="cb__control"><span class="cb__checkmark">✓</span></span><span class="cb__label">数字 0–9</span></label>
+                        <label class="check"><input id="special" type="checkbox" /><span class="cb__control"><span class="cb__checkmark">✓</span></span><span class="cb__label">特殊字符</span></label>
+                    </div>
+                    <div style="height:12px"></div>
+                    <label class="panel-label" for="specialChars">特殊字符内容</label>
+                    <input id="specialChars" type="text" value="!@#$%^&amp;*()-_=+[]{};:,.?/~" disabled />
+                    <div class="hint">勾选“特殊字符”后，这里的字符会被纳入生成池；也可以自己删改内容。</div>
+                </section>
+
+                <!-- 高级选项 -->
+                <section class="panel" id="advancedPanel">
+                    <label class="panel-label">高级选项 <span class="advanced-tag">V8 新增互斥</span></label>
+                    <div class="checks">
+                        <label class="check"><input id="easySpeak" type="checkbox" /><span class="cb__control"><span class="cb__checkmark">✓</span></span><span class="cb__label">易于朗读 <small>（避免歧义字符）</small></span></label>
+                        <label class="check"><input id="easyRead" type="checkbox" /><span class="cb__control"><span class="cb__checkmark">✓</span></span><span class="cb__label">易于阅读 <small>（避免相似字符）</small></span></label>
+                        <label class="check"><input id="easyMobile" type="checkbox" /><span class="cb__control"><span class="cb__checkmark">✓</span></span><span class="cb__label">智能手机上输入简单 <small>（自动互斥大写与特殊字符）</small></span></label>
+                    </div>
+                    <div class="hint" id="filterHint"></div>
+                </section>
+
+            </div>
+
+            <!-- ===== 右栏：结果 ===== -->
+            <div class="right-column">
+
+                <section class="panel" style="flex:1;display:flex;flex-direction:column;">
+
+                    <!-- 头部 chip -->
+                    <div class="result-header">
+                        <div class="chip" id="summaryChip">等待生成</div>
+                        <div class="chip" id="poolChip">字符池：0</div>
+                    </div>
+
+                    <!-- 工具栏 -->
+                    <div class="toolbar">
+                        <button id="generate">✨ 生成密码</button>
+                        <button id="copyAll" class="success">📋 复制全部</button>
+                        <button id="clear" class="secondary">🗑️ 清空</button>
+                    </div>
+
+                    <!-- 强度检测 -->
+                    <div class="strength-panel" id="strengthPanel" style="display:none;">
+                        <div class="strength-header">
+                            <span class="strength-title">🔍 密码强度检测</span>
+                            <span class="strength-score" id="strengthScore">--</span>
+                        </div>
+                        <div class="strength-bar-bg"><div class="strength-bar-fill" id="strengthBar"></div></div>
+                        <div class="strength-details" id="strengthDetails"></div>
+                    </div>
+
+                    <!-- 密码列表 -->
+                    <div id="output" class="output-list"></div>
+
+                    <!-- 统计 -->
+                    <div class="stats" id="stats"></div>
+
+                    <!-- 错误 -->
+                    <div class="error" id="error"></div>
+
+                </section>
+
+            </div>
+            <!-- /右栏 -->
+
+        </div>
+        <!-- /主体 -->
+
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
