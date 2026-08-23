@@ -613,35 +613,34 @@ button:focus-visible {
         font-size: 13px;
     }
 }
-
-/* ===== 日间主题样式 — 森林莫兰迪色 ===== */
+/* ===== 日间主题样式 — 森林莫兰迪色（加深版） ===== */
 body.light-theme {
-    /* 主色变量 */
-    --bg: #e5efe0;
-    --panel: #f5f8f2;
-    --text: #2c3e2f;
-    --muted: #4a5b4c;
-    --border: #bcc9b7;
-    --chip: #dae3d5;
-    --btn: #a0b69a;
-    --shadow: 0 20px 60px rgba(0, 0, 0, .08);
+    /* 主色变量（整体加深2度） */
+    --bg: #d0dfc8;
+    --panel: #e8f0e2;
+    --text: #1a2e1d;
+    --muted: #3a4b3c;
+    --border: #a8b8a3;
+    --chip: #c8d6c0;
+    --btn: #88a082;
+    --shadow: 0 20px 60px rgba(0, 0, 0, .12);
 
-    /* 强调色改为柔和绿（莫兰迪风格） */
-    --accent: #6b8f6b;
-    --accent2: #5a7d5a;
-    --warning: #b8a35c;      /* 警告色也调暗一些 */
-    --danger: #b56a6a;
+    /* 强调色加深 */
+    --accent: #5a7d5a;
+    --accent2: #4a6d4a;
+    --warning: #a8934a;
+    --danger: #a55a5a;
 
-    background: linear-gradient(180deg, #e5efe0 0%, #d4dfd0 100%);
+    background: linear-gradient(180deg, #d0dfc8 0%, #c0d0b8 100%);
 }
 
 /* 面板和卡片 */
 body.light-theme .card {
-    background: rgba(245, 248, 242, .92);
+    background: rgba(235, 242, 230, .95);
     border-color: var(--border);
 }
 body.light-theme .panel {
-    background: rgba(235, 242, 230, .8);
+    background: rgba(225, 235, 220, .85);
     border-color: var(--border);
 }
 
@@ -650,7 +649,7 @@ body.light-theme .stepper input,
 body.light-theme input[type="text"],
 body.light-theme textarea,
 body.light-theme .out-item {
-    background: #ffffff;
+    background: #f9fbf8;
     border-color: var(--border);
     color: var(--text);
 }
@@ -664,11 +663,11 @@ body.light-theme .chip {
 
 /* 复选框 */
 body.light-theme .cb__control {
-    background: #ffffff;
+    background: #f9fbf8;
     border-color: var(--border);
 }
 body.light-theme .cb__control {
-    background: #ffffff;
+    background: #f9fbf8;
     border-color: var(--border);
 }
 
@@ -678,7 +677,7 @@ body.light-theme .mode-btn {
 }
 body.light-theme .mode-btn.active {
     background: var(--accent);
-    color: #ffffff;  /* 激活时文字白色，更清晰 */
+    color: #ffffff;
 }
 
 /* 提示文字 */
@@ -688,35 +687,55 @@ body.light-theme .hint {
 
 /* 强度面板 */
 body.light-theme .strength-panel {
-    background: rgba(235, 242, 230, .8);
+    background: rgba(225, 235, 220, .85);
     border-color: var(--border);
 }
 
 /* 统计徽章 */
 body.light-theme .badge {
-    background: rgba(148, 163, 184, .1);
+    background: rgba(148, 163, 184, .15);
 }
 
-/* ---- 修复复选框 hover 文字变白的问题 ---- */
+/* 复选框 hover 文字 */
 body.light-theme .check:hover .cb__label {
-    color: #1a2b1d;  /* 更深的森林色 */
+    color: #142618;
 }
 
-/* ---- 密码文本颜色加深 ---- */
+/* 密码文本颜色 */
 body.light-theme .pw {
     color: var(--text);
 }
 
-/* ---- 按钮颜色适配（保持与强调色统一） ---- */
+/* ----- 按钮颜色及悬停（颜色变深，文字保持高对比度） ----- */
 body.light-theme button {
     background: var(--accent);
+    color: #ffffff;               /* 默认白色文字 */
 }
 body.light-theme button.success {
     background: var(--accent2);
 }
 body.light-theme button.secondary {
     background: var(--btn);
+    color: #ffffff;
 }
+
+/* 悬停：背景进一步加深，文字保持白色，增强辨识度 */
 body.light-theme button:hover {
-    opacity: .85;
+    background: #4a6d4a;          /* 比 --accent 更深 */
+    color: #ffffff;
+    opacity: 1;                   /* 取消原透明度淡化 */
+}
+body.light-theme button.success:hover {
+    background: #3a5d3a;          /* 比 --accent2 更深 */
+}
+body.light-theme button.secondary:hover {
+    background: #6a8a6a;          /* 比 --btn 更深 */
+}
+
+/* 迷你复制按钮（保留一致性） */
+body.light-theme .mini {
+    background: var(--btn);
+}
+body.light-theme .mini:hover {
+    background: #6a8a6a;
 }
