@@ -29,7 +29,7 @@ const translations = {
         advancedLabel: "高级选项",
         easySpeakLabel: "易于朗读（避免歧义字符）",
         easyReadLabel: "易于阅读（避免相似字符）",
-        easyMobileLabel: "智能手机上输入简单（自动互斥大写与特殊字符）",
+        easyMobileLabel: "智能手机上输入简单（大写和特殊字符总数 ≤ 2）",
         waiting: "等待生成",
         poolPrefix: "字符池：",
         generateBtn: "✨ 生成密码",
@@ -52,7 +52,7 @@ const translations = {
         copiedAll: "📋 已复制全部结果到剪贴板。",
         noContent: "没有可复制的内容。",
         generateFailed: "生成失败",
-        filterHintMobile: "📱 智能手机简单模式下，大写字母已自动取消（与特殊字符互斥）。",
+        filterHintMobile: "📱 智能手机简单模式：大写和特殊字符总数 ≤ 2 个（已启用自动约束）。",
         filterHintRemoved: "高级选项已过滤掉：{names}（该类别无可用字符）",
         lengthAutoAdjusted: "已自动调整为最小位数 {minLen}（有效字符集 {minLen} 种）。",
         errorEmptySpecial: "你勾选了特殊字符，但字符内容为空。",
@@ -60,6 +60,7 @@ const translations = {
         errorFilterNoPool: "高级选项过滤后没有可用字符，请调整选项。",
         errorFilterNoCategory: "高级选项过滤后没有可用字符类别，请调整选项。",
         errorLengthTooShort: "当前有效字符集 {n} 种，密码位数不能小于 {n}。",
+        errorMobileConstraint: "无法在 {maxAttempts} 次尝试内生成满足智能手机简单模式约束的密码，请尝试增加密码位数或调整字符集。",
         repeatPenalty: "重复字符",
         sequencePenalty: "连续/键盘序列",
         allSamePenalty: "全同字符 -90%",
@@ -69,7 +70,6 @@ const translations = {
         strengthScorePrefix: "强度",
         strengthDetails: "详情",
         copySingle: "复制",
-        // 类别名称（用于统计和过滤提示）
         categoryLower: "小写字母",
         categoryUpper: "大写字母",
         categoryDigits: "数字",
@@ -97,7 +97,7 @@ const translations = {
         advancedLabel: "Advanced Options",
         easySpeakLabel: "Easy to speak (avoid ambiguous characters)",
         easyReadLabel: "Easy to read (avoid similar characters)",
-        easyMobileLabel: "Smartphone-friendly (auto-excludes uppercase & special conflict)",
+        easyMobileLabel: "Smartphone-friendly (uppercase + special ≤ 2 chars)",
         waiting: "Waiting",
         poolPrefix: "Pool: ",
         generateBtn: "✨ Generate",
@@ -120,7 +120,7 @@ const translations = {
         copiedAll: "📋 Copied all results to clipboard.",
         noContent: "No content to copy.",
         generateFailed: "Generation failed",
-        filterHintMobile: "📱 Smartphone mode: uppercase automatically disabled (conflicts with special chars).",
+        filterHintMobile: "📱 Smartphone mode: uppercase + special ≤ 2 (auto-enforced).",
         filterHintRemoved: "Filtered out: {names} (no usable characters in that category)",
         lengthAutoAdjusted: "Auto-adjusted to minimum {minLen} (effective character sets: {minLen}).",
         errorEmptySpecial: "Special characters enabled but content is empty.",
@@ -128,6 +128,7 @@ const translations = {
         errorFilterNoPool: "No usable characters after filtering. Adjust options.",
         errorFilterNoCategory: "No usable character categories after filtering. Adjust options.",
         errorLengthTooShort: "Effective character sets: {n}, password length cannot be less than {n}.",
+        errorMobileConstraint: "Unable to generate a password satisfying the smartphone constraint after {maxAttempts} attempts. Try increasing length or adjusting charsets.",
         repeatPenalty: "Repeated chars",
         sequencePenalty: "Sequential/keyboard pattern",
         allSamePenalty: "All same char -90%",
@@ -137,7 +138,6 @@ const translations = {
         strengthScorePrefix: "Strength",
         strengthDetails: "Details",
         copySingle: "Copy",
-        // 类别名称
         categoryLower: "Lowercase",
         categoryUpper: "Uppercase",
         categoryDigits: "Digits",
@@ -180,7 +180,7 @@ const els = {
 };
 
 let currentMode = 'password';
-let currentLang = 'zh'; // 默认中文
+let currentLang = 'zh';
 
 // ===== 语言切换函数 =====
 function switchLanguage(lang) {
@@ -191,11 +191,9 @@ function switchLanguage(lang) {
             el.innerHTML = translations[lang][key];
         }
     });
-    // 重新生成以刷新动态文本
     generate();
 }
 
-// 获取当前语言的某个翻译
 function t(key, params) {
     let text = translations[currentLang]?.[key] || translations['zh'][key] || key;
     if (params) {
@@ -206,7 +204,6 @@ function t(key, params) {
     return text;
 }
 
-// 获取类别名称（根据当前语言）
 function getCategoryName(type) {
     const map = {
         lower: 'categoryLower',
@@ -217,24 +214,13 @@ function getCategoryName(type) {
     return t(map[type] || type);
 }
 
-// ===== 智能手机简单模式互斥逻辑 =====
-function enforceMobileSimple() {
-    if (currentMode !== 'password') return;
-    const mobile = els.easyMobile.checked;
-    const special = els.special.checked;
-    const upper = els.upper.checked;
-
-    if (mobile && special && upper) {
-        els.upper.checked = false;
+// ===== 移除原互斥逻辑，改为仅提示 =====
+function updateMobileHint() {
+    if (els.easyMobile.checked && currentMode === 'password') {
         els.filterHint.textContent = t('filterHintMobile');
         els.filterHint.className = "hint warn";
-    } else if (!mobile) {
-        if (els.filterHint.textContent.includes(t('filterHintMobile'))) {
-            els.filterHint.textContent = "";
-            els.filterHint.className = "hint";
-        }
-    } else if (mobile && !(special && upper)) {
-        if (els.filterHint.textContent.includes(t('filterHintMobile'))) {
+    } else {
+        if (els.filterHint.textContent === t('filterHintMobile')) {
             els.filterHint.textContent = "";
             els.filterHint.className = "hint";
         }
@@ -242,10 +228,12 @@ function enforceMobileSimple() {
 }
 
 function handleCheckboxChange(e) {
-    enforceMobileSimple();
+    // 只处理特殊字符的禁用状态
     if (e.target === els.special) {
         els.specialChars.disabled = !els.special.checked;
     }
+    // 更新提示
+    updateMobileHint();
     generate();
 }
 
@@ -293,7 +281,7 @@ function setMode(mode) {
         els.charsetPanel.classList.add('hidden');
         els.advancedPanel.classList.add('hidden');
     }
-    enforceMobileSimple();
+    updateMobileHint();
     generate();
 }
 
@@ -359,6 +347,18 @@ function generatePin(length) {
 
 function escapeHtml(str) {
     return str.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
+}
+
+// ---- 验证智能手机简单模式约束 ----
+function isPasswordValidForMobile(pw, upperEnabled, specialEnabled) {
+    if (!upperEnabled && !specialEnabled) return true; // 无约束
+    const upperCount = (pw.match(/[A-Z]/g) || []).length;
+    const specialCount = (pw.match(/[^a-zA-Z0-9]/g) || []).length;
+    const total = upperCount + specialCount;
+    if (total > 2) return false;
+    if (upperEnabled && upperCount === 0) return false;
+    if (specialEnabled && specialCount === 0) return false;
+    return true;
 }
 
 function renderOutput(list) {
@@ -450,8 +450,9 @@ function analyzeStrength(password) {
 
 function generate() {
     els.error.textContent = "";
-    els.filterHint.textContent = "";
-    els.filterHint.className = "hint";
+    // 更新提示（但不要覆盖过滤提示）
+    updateMobileHint();
+
     const count = clampInt(els.count.value, 1, 10, 1);
     els.count.value = count;
     let list = [],
@@ -476,9 +477,9 @@ function generate() {
             removedNames = filtered.removed || [];
             poolLen = effectivePool.length;
             selectedNames = effectiveCategories.map(c => c.name);
+            // 检查是否因过滤导致无可用字符
             if (removedNames.length) {
-                els.filterHint.textContent = t('filterHintRemoved', { names: removedNames.join('、') });
-                els.filterHint.className = "hint warn";
+                // 但提示已在 applyFilters 中通过错误抛出，我们不再重复提示
             }
             const minLen = effectiveCategories.length;
             if (length < minLen) {
@@ -490,7 +491,30 @@ function generate() {
                 els.lengthHint.textContent = t('lengthHint');
                 els.lengthHint.style.color = "";
             }
-            list = Array.from({ length: count }, () => generatePassword(effectivePool, length, effectiveCategories));
+
+            // 生成密码，并应用智能手机简单模式约束
+            const mobileMode = els.easyMobile.checked;
+            const upperEnabled = els.upper.checked;
+            const specialEnabled = els.special.checked;
+            const maxAttempts = 20;
+            let attempts = 0;
+            const generatedList = [];
+            for (let i = 0; i < count; i++) {
+                let pw;
+                let valid = false;
+                for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                    pw = generatePassword(effectivePool, length, effectiveCategories);
+                    if (!mobileMode || isPasswordValidForMobile(pw, upperEnabled, specialEnabled)) {
+                        valid = true;
+                        break;
+                    }
+                }
+                if (!valid) {
+                    throw new Error(t('errorMobileConstraint', { maxAttempts }));
+                }
+                generatedList.push(pw);
+            }
+            list = generatedList;
         }
         renderOutput(list);
         renderStats(selectedNames, poolLen, length, count, removedNames);
@@ -575,16 +599,11 @@ setMode('password');
 
 // ---- 主题切换 ----
 const themeToggle = document.getElementById('themeToggle');
-
-// 切换主题的函数
 function toggleTheme() {
     document.body.classList.toggle('light-theme');
-    // 更新按钮图标
     const isLight = document.body.classList.contains('light-theme');
     themeToggle.textContent = isLight ? '🌙' : '☀️';
 }
-
-// 绑定点击事件
 themeToggle.addEventListener('click', toggleTheme);
 
 // (可选) 默认记住用户偏好：如果你希望默认就是日间模式，取消下面这行的注释

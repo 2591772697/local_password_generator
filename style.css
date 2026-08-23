@@ -613,6 +613,7 @@ button:focus-visible {
         font-size: 13px;
     }
 }
+
 /* ===== 日间主题样式 ===== */
 body.light-theme {
     --bg: #f0f4f8;
@@ -666,4 +667,14 @@ body.light-theme .strength-panel {
 }
 body.light-theme .badge {
     background: rgba(148, 163, 184, .1);
+}
+
+/* 新增：日间模式下复选框 hover 文字颜色 */
+body.light-theme .check:hover .cb__label {
+    color: #0b1220;
+}
+
+/* 新增：日间模式下密码文本颜色加深 */
+body.light-theme .pw {
+    color: #1e293b;
 }
