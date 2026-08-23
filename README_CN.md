@@ -50,6 +50,30 @@ python -m http.server 8018
 
 然后访问 <http://localhost:8018/>。
 
+### 8018 端口故障排查
+
+如果 `http://localhost:8018/` 无法访问，可以使用 PowerShell 查找并停止占用 8018 端口的进程。
+
+**查找占用端口的进程：**
+
+```powershell
+Get-NetTCPConnection -LocalPort 8018 | Select-Object LocalAddress, LocalPort, @{Name="PID";Expression={$_.OwningProcess}}, @{Name="ProcessName";Expression={(Get-Process -Id $_.OwningProcess).ProcessName}}, @{Name="Path";Expression={(Get-Process -Id $_.OwningProcess).Path}}
+```
+
+**停止占用端口的进程：**
+
+```powershell
+Get-NetTCPConnection -LocalPort 8018 | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+```
+
+**再次检查端口：**
+
+```powershell
+Get-NetTCPConnection -LocalPort 8018
+```
+
+如果最后一条命令没有返回连接，说明 8018 端口已经释放。然后重新运行 `python -m http.server 8018`，再访问 <http://localhost:8018/>。
+
 ## 项目结构
 
 | 文件 | 用途 |

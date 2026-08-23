@@ -1,6 +1,9 @@
 Find:
+
 Get-NetTCPConnection -LocalPort 8018 | Select-Object LocalAddress, LocalPort, @{Name="PID";Expression={$_.OwningProcess}}, @{Name="ProcessName";Expression={(Get-Process -Id $_.OwningProcess).ProcessName}}, @{Name="Path";Expression={(Get-Process -Id $_.OwningProcess).Path}}
+
 Kill:
 Get-NetTCPConnection -LocalPort 8018 | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+
 Check:
 Get-NetTCPConnection -LocalPort 8018

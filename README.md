@@ -50,6 +50,30 @@ python -m http.server 8018
 
 Then visit <http://localhost:8018/>.
 
+### Troubleshoot Port 8018
+
+Use PowerShell to find and stop a process that is occupying port 8018:
+
+**Find the process:**
+
+```powershell
+Get-NetTCPConnection -LocalPort 8018 | Select-Object LocalAddress, LocalPort, @{Name="PID";Expression={$_.OwningProcess}}, @{Name="ProcessName";Expression={(Get-Process -Id $_.OwningProcess).ProcessName}}, @{Name="Path";Expression={(Get-Process -Id $_.OwningProcess).Path}}
+```
+
+**Stop the process:**
+
+```powershell
+Get-NetTCPConnection -LocalPort 8018 | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+```
+
+**Check the port again:**
+
+```powershell
+Get-NetTCPConnection -LocalPort 8018
+```
+
+If the final command returns no connection, port 8018 is no longer in use. Start the local server again with `python -m http.server 8018`.
+
 ## Project Structure
 
 | File | Purpose |
