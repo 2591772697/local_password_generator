@@ -5,7 +5,7 @@ const EXCLUDE_SPOKEN = new Set("lI1oO0B8S5Z2g9qG6T7".split(""));
 const EXCLUDE_SIMILAR = new Set("lI1|0Oo5Ss8B2Zz6G9gq".split(""));
 const EXCLUDE_MOBILE = new Set([..."ABCDEFGHIJKLMNOPQRSTUVWXYZ", ..."!@#$%^&*()-_=+[]{};:,.?/~`\"\\|<>"]);
 
-// ===== 语言翻译表（未变动） =====
+// ===== 语言翻译表 =====
 const translations = {
     zh: {
         appTitle: "🔐 密码生成器 V8",
@@ -13,10 +13,10 @@ const translations = {
         modePassword: "🔑 普通密码",
         modePin: "🔢 PIN 密码",
         pwLengthLabel: "密码位数",
-        lengthHint: "建议 8~32 位；默认 10 位。",
+        lengthHint: "建议 8~32 位；默认 10 位。滑块为 0 时不生成密码。",
         pinLengthLabel: "PIN 位数",
         pinHint: "纯数字 PIN，支持 3~32 位；默认 6 位。",
-        countLabel: "生成组数（1~10）",
+        countLabel: "生成组数（1~16）",
         countHint: "一次生成多组，直接复制全部结果即可。",
         charsetLabel: "字符集",
         charsetTag: "（勾选 N 种则密码至少含 N 位，每种至少 1 个）",
@@ -61,6 +61,7 @@ const translations = {
         errorFilterNoCategory: "高级选项过滤后没有可用字符类别，请调整选项。",
         errorLengthTooShort: "当前有效字符集 {n} 种，密码位数不能小于 {n}。",
         errorMobileConstraintNoFill: "智能手机简单模式下，需要至少勾选小写字母或数字来填充剩余位，请调整。",
+        errorZeroLength: "密码位数不能为 0，请增加长度。",
         repeatPenalty: "重复字符",
         sequencePenalty: "连续/键盘序列",
         allSamePenalty: "全同字符 -90%",
@@ -73,7 +74,9 @@ const translations = {
         categoryLower: "小写字母",
         categoryUpper: "大写字母",
         categoryDigits: "数字",
-        categorySpecial: "特殊字符"
+        categorySpecial: "特殊字符",
+        qrLabel: "二维码",
+        qrPlaceholder: "点击复制密码后显示二维码"
     },
     en: {
         appTitle: "🔐 Password Generator V8",
@@ -81,10 +84,10 @@ const translations = {
         modePassword: "🔑 Password",
         modePin: "🔢 PIN",
         pwLengthLabel: "Password Length",
-        lengthHint: "Recommended 8–32; default 10.",
+        lengthHint: "Recommended 8–32; default 10. Slider 0 means no password.",
         pinLengthLabel: "PIN Length",
         pinHint: "Numeric PIN, 3–32 digits; default 6.",
-        countLabel: "Number of passwords (1–10)",
+        countLabel: "Number of passwords (1–16)",
         countHint: "Generate multiple at once, copy all.",
         charsetLabel: "Character Set",
         charsetTag: "(Checking N types ensures at least N characters, one from each)",
@@ -129,6 +132,7 @@ const translations = {
         errorFilterNoCategory: "No usable character categories after filtering. Adjust options.",
         errorLengthTooShort: "Effective character sets: {n}, password length cannot be less than {n}.",
         errorMobileConstraintNoFill: "Smartphone mode requires at least lowercase or digits for filling remaining positions, please adjust.",
+        errorZeroLength: "Password length cannot be 0, please increase.",
         repeatPenalty: "Repeated chars",
         sequencePenalty: "Sequential/keyboard pattern",
         allSamePenalty: "All same char -90%",
@@ -141,14 +145,17 @@ const translations = {
         categoryLower: "Lowercase",
         categoryUpper: "Uppercase",
         categoryDigits: "Digits",
-        categorySpecial: "Special"
+        categorySpecial: "Special",
+        qrLabel: "QR Code",
+        qrPlaceholder: "Click copy password to show QR"
     }
 };
 
 // DOM 引用
 const $ = id => document.getElementById(id);
 const els = {
-    length: $("length"),
+    lengthSlider: $("lengthSlider"),
+    lengthDisplay: $("lengthDisplay"),
     pinLength: $("pinLength"),
     count: $("count"),
     lower: $("lower"),
@@ -176,11 +183,14 @@ const els = {
     advancedPanel: $("advancedPanel"),
     lengthHint: $("lengthHint"),
     filterHint: $("filterHint"),
-    langSwitch: $("langSwitch")
+    langSwitch: $("langSwitch"),
+    qrcodeContainer: $("qrcodeContainer"),
+    qrLabel: $("qrLabel")
 };
 
 let currentMode = 'password';
 let currentLang = 'zh';
+let currentQRCode = null; // 保存二维码实例以便清除
 
 // ===== 语言切换函数 =====
 function switchLanguage(lang) {
@@ -271,6 +281,8 @@ function setMode(mode) {
         els.pinLengthPanel.classList.add('hidden');
         els.charsetPanel.classList.remove('hidden');
         els.advancedPanel.classList.remove('hidden');
+        // 显示二维码面板
+        document.getElementById('qrcodePanel').style.display = 'block';
     } else {
         els.modePin.classList.add('active');
         els.modePassword.classList.remove('active');
@@ -278,6 +290,8 @@ function setMode(mode) {
         els.pinLengthPanel.classList.remove('hidden');
         els.charsetPanel.classList.add('hidden');
         els.advancedPanel.classList.add('hidden');
+        // PIN 模式隐藏二维码面板（因为 PIN 不适用复杂字符）
+        document.getElementById('qrcodePanel').style.display = 'none';
     }
     updateMobileHint();
     generate();
@@ -308,13 +322,11 @@ function buildPool() {
     return { pool, categories };
 }
 
-// ===== 关键修改：applyFilters 不再排除 easyMobile 的字符 =====
+// ===== applyFilters 不再排除 easyMobile 的字符 =====
 function applyFilters(pool, categories) {
     const exclude = new Set();
     if (els.easySpeak.checked) EXCLUDE_SPOKEN.forEach(c => exclude.add(c));
     if (els.easyRead.checked) EXCLUDE_SIMILAR.forEach(c => exclude.add(c));
-    // 注意：不再因为 easyMobile 排除字符，easyMobile 只控制生成数量
-    // 原代码: if (els.easyMobile.checked) EXCLUDE_MOBILE.forEach(c => exclude.add(c));  ← 已移除
 
     if (!exclude.size) return { pool, categories, removed: [] };
     const filteredPool = pool.split('').filter(c => !exclude.has(c)).join('');
@@ -340,7 +352,7 @@ function generatePassword(pool, length, categories) {
     return result.join("");
 }
 
-// ===== 智能手机简单模式生成（构造法：先放必选字符，再填充，最后打乱） =====
+// ===== 智能手机简单模式生成（构造法） =====
 function generateMobilePassword(length, categories, effectivePool) {
     const hasUpper = categories.some(c => c.name === getCategoryName('upper'));
     const hasSpecial = categories.some(c => c.name === getCategoryName('special'));
@@ -349,7 +361,6 @@ function generateMobilePassword(length, categories, effectivePool) {
         return generatePassword(effectivePool, length, categories);
     }
 
-    // 填充池：小写 + 数字
     const lowerCat = categories.find(c => c.name === getCategoryName('lower'));
     const digitCat = categories.find(c => c.name === getCategoryName('digits'));
     let fillPool = '';
@@ -388,18 +399,50 @@ function escapeHtml(str) {
     return str.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 }
 
+// ---- 二维码生成 ----
+function generateQRCode(text) {
+    const container = els.qrcodeContainer;
+    // 清空容器
+    container.innerHTML = '';
+    if (!text) {
+        container.innerHTML = `<span style="color:var(--muted);font-size:14px;" data-i18n="qrPlaceholder">${t('qrPlaceholder')}</span>`;
+        return;
+    }
+    // 创建二维码（尺寸 80x80）
+    try {
+        currentQRCode = new QRCode(container, {
+            text: text,
+            width: 80,
+            height: 80,
+            colorDark: '#1a2e1d',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.L
+        });
+        // 在二维码上方显示文本预览（可选）
+        // 但用户只要求二维码，不加额外文字
+    } catch(e) {
+        container.innerHTML = `<span style="color:var(--danger);">❌ QR 生成失败</span>`;
+        console.error(e);
+    }
+}
+
+// ---- 渲染输出 ----
 function renderOutput(list) {
     els.output.innerHTML = list.map((pw, idx) =>
         `<div class="out-item"><div class="pw">${escapeHtml(pw)}</div><button class="mini" data-copy="${idx}">${t('copySingle')}</button></div>`
     ).join("");
+    // 绑定单个复制事件
     els.output.querySelectorAll("[data-copy]").forEach(btn => {
         btn.addEventListener("click", async () => {
             const index = Number(btn.getAttribute("data-copy"));
-            await navigator.clipboard.writeText(list[index]);
+            const pw = list[index];
+            await navigator.clipboard.writeText(pw);
             els.error.textContent = t('copiedSingle', { index: index+1 });
             setTimeout(() => {
                 if (els.error.textContent === t('copiedSingle', { index: index+1 })) els.error.textContent = "";
             }, 1500);
+            // 生成该密码的二维码
+            generateQRCode(pw);
         });
     });
     if (list.length > 0) analyzeStrength(list[0]);
@@ -479,12 +522,28 @@ function generate() {
     els.error.textContent = "";
     updateMobileHint();
 
-    const count = clampInt(els.count.value, 1, 10, 1);
+    // 读取滑块值（密码长度）
+    let length = parseInt(els.lengthSlider.value, 10);
+    els.lengthDisplay.textContent = length;
+    const count = clampInt(els.count.value, 1, 16, 2);
     els.count.value = count;
+
+    // 如果长度为 0，直接报错并清空结果
+    if (length === 0) {
+        els.output.innerHTML = "";
+        els.stats.innerHTML = "";
+        els.summaryChip.textContent = t('waiting');
+        els.poolChip.textContent = t('poolPrefix') + "0";
+        els.strengthPanel.style.display = 'none';
+        els.error.textContent = t('errorZeroLength');
+        // 清空二维码
+        generateQRCode('');
+        return;
+    }
+
     let list = [],
         selectedNames = [],
         poolLen = 0,
-        length = 0,
         removedNames = [];
     try {
         if (currentMode === 'pin') {
@@ -494,8 +553,7 @@ function generate() {
             selectedNames = [t('categoryDigits')];
             list = Array.from({ length: count }, () => generatePin(length));
         } else {
-            length = clampInt(els.length.value, 1, 256, 16);
-            els.length.value = length;
+            // 普通密码模式：使用滑块长度
             const { pool, categories } = buildPool();
             const filtered = applyFilters(pool, categories);
             const effectivePool = filtered.pool,
@@ -503,13 +561,11 @@ function generate() {
             removedNames = filtered.removed || [];
             poolLen = effectivePool.length;
             selectedNames = effectiveCategories.map(c => c.name);
-            if (removedNames.length) {
-                // 已在统计中显示
-            }
             const minLen = effectiveCategories.length;
             if (length < minLen) {
                 length = minLen;
-                els.length.value = length;
+                els.lengthSlider.value = length;
+                els.lengthDisplay.textContent = length;
                 els.lengthHint.textContent = t('lengthAutoAdjusted', { minLen });
                 els.lengthHint.style.color = "var(--warning)";
             } else {
@@ -532,6 +588,8 @@ function generate() {
         }
         renderOutput(list);
         renderStats(selectedNames, poolLen, length, count, removedNames);
+        // 生成后默认清除二维码（或者不生成，等待用户点击复制）
+        generateQRCode('');
     } catch (err) {
         els.output.innerHTML = "";
         els.stats.innerHTML = "";
@@ -539,6 +597,7 @@ function generate() {
         els.poolChip.textContent = t('poolPrefix') + "0";
         els.strengthPanel.style.display = 'none';
         els.error.textContent = err.message || String(err);
+        generateQRCode('');
     }
 }
 
@@ -550,6 +609,8 @@ async function copyAll() {
     setTimeout(() => {
         if (els.error.textContent === t('copiedAll')) els.error.textContent = "";
     }, 1500);
+    // 生成全部密码拼接的二维码
+    generateQRCode(text);
 }
 
 function toggleSpecial() {
@@ -560,6 +621,21 @@ function toggleSpecial() {
 function setStepperValue(inputEl, delta, min, max) {
     const current = clampInt(inputEl.value, min, max, min);
     inputEl.value = Math.max(min, Math.min(max, current + delta));
+    generate();
+}
+
+// ---- 滑块同步 ----
+function updateLengthFromSlider() {
+    const val = parseInt(els.lengthSlider.value, 10);
+    els.lengthDisplay.textContent = val;
+    generate();
+}
+
+function updateLengthFromStepper(delta) {
+    let val = parseInt(els.lengthSlider.value, 10) + delta;
+    val = Math.max(0, Math.min(128, val));
+    els.lengthSlider.value = val;
+    els.lengthDisplay.textContent = val;
     generate();
 }
 
@@ -575,17 +651,27 @@ $("clear").addEventListener("click", () => {
     els.strengthPanel.style.display = 'none';
     els.filterHint.textContent = "";
     els.filterHint.className = "hint";
+    generateQRCode('');
 });
 els.modePassword.addEventListener("click", () => setMode('password'));
 els.modePin.addEventListener("click", () => setMode('pin'));
-$("lengthDown").addEventListener("click", () => setStepperValue(els.length, -1, 1, 256));
-$("lengthUp").addEventListener("click", () => setStepperValue(els.length, 1, 1, 256));
+
+// 滑块加减按钮
+$("lengthDown").addEventListener("click", () => updateLengthFromStepper(-1));
+$("lengthUp").addEventListener("click", () => updateLengthFromStepper(1));
+// 滑块输入事件
+els.lengthSlider.addEventListener("input", updateLengthFromSlider);
+
+// PIN 长度加减
 $("pinLengthDown").addEventListener("click", () => setStepperValue(els.pinLength, -1, 3, 32));
 $("pinLengthUp").addEventListener("click", () => setStepperValue(els.pinLength, 1, 3, 32));
-$("countDown").addEventListener("click", () => setStepperValue(els.count, -1, 1, 10));
-$("countUp").addEventListener("click", () => setStepperValue(els.count, 1, 1, 10));
 
-[els.length, els.count, els.pinLength].forEach(el => {
+// 组数加减
+$("countDown").addEventListener("click", () => setStepperValue(els.count, -1, 1, 16));
+$("countUp").addEventListener("click", () => setStepperValue(els.count, 1, 1, 16));
+
+// 其他输入事件
+[els.count, els.pinLength].forEach(el => {
     el.addEventListener("input", generate);
     el.addEventListener("change", generate);
     el.addEventListener("blur", generate);
@@ -619,6 +705,7 @@ function toggleTheme() {
     themeToggle.textContent = isLight ? '🌙' : '☀️';
 }
 themeToggle.addEventListener('click', toggleTheme);
+// 默认暗色
 // 默认暗色，无需额外操作
 // (可选) 默认记住用户偏好：如果你希望默认就是日间模式，取消下面这行的注释
 // document.body.classList.add('light-theme');
