@@ -2,7 +2,7 @@
 
 A lightweight, client-side password generator with English and Chinese interfaces.
 
-**Live demo:** [Password Generator V8 - Bilingual](https://the-password-generator.pages.dev/)
+**Live demo:** [Password Generator V8 - Bilingual](https://the-password-generator.pages.dev/) (https://the-password-generator.pages.dev/)
 
 ## Features
 
