@@ -526,8 +526,8 @@ function generateQRCode(text) {
     document.body.appendChild(tempDiv);
     const qr = new QRCode(tempDiv, {
         text: text,
-        width: 450,
-        height: 450,
+        width: 460,
+        height: 460,
         colorDark: '#000000',
         colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.L
@@ -543,7 +543,7 @@ function generateQRCode(text) {
     wrapper.style.display = 'inline-block';
     wrapper.style.background = '#ffffff';
     wrapper.style.padding = '10px';
-    wrapper.style.border = '19px solid #fed400';
+    wrapper.style.border = '20px solid #fed400';
     wrapper.style.borderRadius = '8px';
     wrapper.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
     wrapper.appendChild(img);
@@ -585,7 +585,7 @@ function openQRCodeInNewTab() {
             .qr-wrapper {
                 display:inline-block;
                 background: #ffffff;
-                padding: 15px;
+                padding: 14px;
                 border: 19px solid #1d4ed8;
                 border-radius: 16px;
                 box-shadow: 0 4px 20px rgba(0,0,0,0.15);
