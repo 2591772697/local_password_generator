@@ -572,3 +572,21 @@ els.langSwitch.addEventListener("change", function() {
 els.langSwitch.value = 'en';
 switchLanguage('en');
 setMode('password');
+
+// ---- 主题切换 ----
+const themeToggle = document.getElementById('themeToggle');
+
+// 切换主题的函数
+function toggleTheme() {
+    document.body.classList.toggle('light-theme');
+    // 更新按钮图标
+    const isLight = document.body.classList.contains('light-theme');
+    themeToggle.textContent = isLight ? '🌙' : '☀️';
+}
+
+// 绑定点击事件
+themeToggle.addEventListener('click', toggleTheme);
+
+// (可选) 默认记住用户偏好：如果你希望默认就是日间模式，取消下面这行的注释
+// document.body.classList.add('light-theme');
+// themeToggle.textContent = '🌙';

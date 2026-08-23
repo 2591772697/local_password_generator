@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>密码生成器 V8 — 中英文双语言</title>
     <link rel="stylesheet" href="style.css" />
+    <style>
+    /* 为所有元素指定回退字体，确保国旗字体能生效 */
+    * {
+        font-family: 'Twemoji Country Flags', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+</style>
 </head>
 <body>
     <main class="card">
@@ -16,6 +22,10 @@
                 <p class="sub" data-i18n="appSub">PIN 模式、智能强度、字符集强制覆盖、高级过滤；智能手机模式自动互斥。</p>
             </div>
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                <!-- 主题切换按钮 -->
+                    <button id="themeToggle" style="background:var(--chip);border:1px solid var(--border);color:var(--text);border-radius:50%;width:44px;height:44px;font-size:20px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .2s ease;flex-shrink:0;" aria-label="切换主题">
+                        ☀️
+                    </button>
                 <div class="mode-switch">
                     <button class="mode-btn active" id="modePassword" type="button" data-i18n="modePassword">🔑 普通密码</button>
                     <button class="mode-btn" id="modePin" type="button" data-i18n="modePin">🔢 PIN 密码</button>
@@ -146,5 +156,11 @@
     </main>
 
     <script src="script.js"></script>
+        <script type="module">
+        // 从 CDN 导入 polyfill 函数
+        import { polyfillCountryFlagEmojis } from "https://cdn.skypack.dev/country-flag-emoji-polyfill";
+        // 执行 polyfill
+        polyfillCountryFlagEmojis();
+    </script>
 </body>
 </html>

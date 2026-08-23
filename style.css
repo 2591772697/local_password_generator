@@ -613,3 +613,57 @@ button:focus-visible {
         font-size: 13px;
     }
 }
+/* ===== 日间主题样式 ===== */
+body.light-theme {
+    --bg: #f0f4f8;
+    --panel: #ffffff;
+    --text: #1e293b;
+    --muted: #475569;
+    --border: #cbd5e1;
+    --chip: #e2e8f0;
+    --btn: #94a3b8;
+    --shadow: 0 20px 60px rgba(0, 0, 0, .1);
+    background: linear-gradient(180deg, #f0f4f8 0%, #e2e8f0 100%);
+}
+body.light-theme .card {
+    background: rgba(255, 255, 255, .92);
+    border-color: var(--border);
+}
+body.light-theme .panel {
+    background: rgba(241, 245, 249, .8);
+    border-color: var(--border);
+}
+body.light-theme .stepper input,
+body.light-theme input[type="text"],
+body.light-theme textarea,
+body.light-theme .out-item {
+    background: #ffffff;
+    border-color: var(--border);
+    color: var(--text);
+}
+body.light-theme .chip {
+    background: var(--chip);
+    border-color: var(--border);
+    color: var(--text);
+}
+body.light-theme .cb__control {
+    background: #ffffff;
+    border-color: var(--cb-border);
+}
+body.light-theme .mode-btn {
+    color: var(--muted);
+}
+body.light-theme .mode-btn.active {
+    background: var(--accent);
+    color: #0f172a;
+}
+body.light-theme .hint {
+    color: var(--muted);
+}
+body.light-theme .strength-panel {
+    background: rgba(241, 245, 249, .8);
+    border-color: var(--border);
+}
+body.light-theme .badge {
+    background: rgba(148, 163, 184, .1);
+}
