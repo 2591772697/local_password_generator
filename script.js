@@ -68,7 +68,12 @@ const translations = {
         generationSuccess: "已生成 {count} 组，每组 {length} 位",
         strengthScorePrefix: "强度",
         strengthDetails: "详情",
-        // 以下为动态拼接部分，不直接使用
+        copySingle: "复制",
+        // 类别名称（用于统计和过滤提示）
+        categoryLower: "小写字母",
+        categoryUpper: "大写字母",
+        categoryDigits: "数字",
+        categorySpecial: "特殊字符"
     },
     en: {
         appTitle: "🔐 Password Generator V8",
@@ -131,6 +136,12 @@ const translations = {
         generationSuccess: "Generated {count} passwords, each {length} chars",
         strengthScorePrefix: "Strength",
         strengthDetails: "Details",
+        copySingle: "Copy",
+        // 类别名称
+        categoryLower: "Lowercase",
+        categoryUpper: "Uppercase",
+        categoryDigits: "Digits",
+        categorySpecial: "Special"
     }
 };
 
@@ -174,28 +185,14 @@ let currentLang = 'zh'; // 默认中文
 // ===== 语言切换函数 =====
 function switchLanguage(lang) {
     currentLang = lang;
-    // 遍历所有带有 data-i18n 属性的元素
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if (translations[lang] && translations[lang][key] !== undefined) {
-            // 如果是 input 的 placeholder 或 value 特殊处理，但这里都是文本节点
-            // 对于按钮、标签等，直接设置 innerHTML 保留可能的小标签
             el.innerHTML = translations[lang][key];
         }
     });
-    // 更新强度检测中的固定文本（如果强度面板可见）
-    updateStrengthText();
-    // 更新统计 chip（summaryChip 和 poolChip 已包含 data-i18n，但动态内容需刷新）
-    // 因为生成后会有动态内容，我们会在 generate 里重新设置带翻译的文本
-    // 这里只切换静态文本，动态内容会在 generate 里重新调用
-    // 强制重新生成一次以刷新动态文本
+    // 重新生成以刷新动态文本
     generate();
-}
-
-// 更新强度检测中的动态文本（部分文本通过 JS 动态生成）
-function updateStrengthText() {
-    // strengthScore 和 details 内容由 analyzeStrength 动态填充，那里会使用翻译
-    // 我们可以在 analyzeStrength 中直接引用翻译表
 }
 
 // 获取当前语言的某个翻译
@@ -209,7 +206,18 @@ function t(key, params) {
     return text;
 }
 
-// ===== 新增：智能手机简单模式互斥逻辑 =====
+// 获取类别名称（根据当前语言）
+function getCategoryName(type) {
+    const map = {
+        lower: 'categoryLower',
+        upper: 'categoryUpper',
+        digits: 'categoryDigits',
+        special: 'categorySpecial'
+    };
+    return t(map[type] || type);
+}
+
+// ===== 智能手机简单模式互斥逻辑 =====
 function enforceMobileSimple() {
     if (currentMode !== 'password') return;
     const mobile = els.easyMobile.checked;
@@ -241,7 +249,7 @@ function handleCheckboxChange(e) {
     generate();
 }
 
-// ---- 原核心函数（仅修改了 generate 中的文本使用 t()） ----
+// ---- 核心函数 ----
 function randomInt(maxExclusive) {
     if (maxExclusive <= 0) return 0;
     if (maxExclusive > 0x100000000) throw new Error("随机范围过大");
@@ -292,14 +300,23 @@ function setMode(mode) {
 function buildPool() {
     let pool = "";
     const categories = [];
-    if (els.lower.checked) { pool += LOWER; categories.push({ name: "小写", chars: LOWER }); }
-    if (els.upper.checked) { pool += UPPER; categories.push({ name: "大写", chars: UPPER }); }
-    if (els.digits.checked) { pool += DIGITS; categories.push({ name: "数字", chars: DIGITS }); }
+    if (els.lower.checked) {
+        pool += LOWER;
+        categories.push({ name: getCategoryName('lower'), chars: LOWER });
+    }
+    if (els.upper.checked) {
+        pool += UPPER;
+        categories.push({ name: getCategoryName('upper'), chars: UPPER });
+    }
+    if (els.digits.checked) {
+        pool += DIGITS;
+        categories.push({ name: getCategoryName('digits'), chars: DIGITS });
+    }
     if (els.special.checked) {
         const s = els.specialChars.value;
         if (!s.length) throw new Error(t('errorEmptySpecial'));
         pool += s;
-        categories.push({ name: "特殊字符", chars: s });
+        categories.push({ name: getCategoryName('special'), chars: s });
     }
     if (!pool.length) throw new Error(t('errorNoCharset'));
     return { pool, categories };
@@ -363,7 +380,7 @@ function renderOutput(list) {
 
 function renderStats(selectedNames, poolLen, length, count, removedNames) {
     const badges = [
-        `<span class="badge">${t('charsetLabel')}：${selectedNames.join(" / ")||"数字"}</span>`,
+        `<span class="badge">${t('charsetLabel')}：${selectedNames.join(" / ") || t('categoryDigits')}</span>`,
         `<span class="badge">${t('poolSizeLabel')}：${poolLen}</span>`,
         `<span class="badge">${t('pwLengthLabel')}：${length}</span>`,
         `<span class="badge">${t('countLabel')}：${count}</span>`
@@ -447,7 +464,7 @@ function generate() {
             length = clampInt(els.pinLength.value, 3, 32, 6);
             els.pinLength.value = length;
             poolLen = 10;
-            selectedNames = ["数字"];
+            selectedNames = [t('categoryDigits')];
             list = Array.from({ length: count }, () => generatePin(length));
         } else {
             length = clampInt(els.length.value, 1, 256, 16);
@@ -552,7 +569,6 @@ els.langSwitch.addEventListener("change", function() {
 });
 
 // ---- 初始化 ----
-// 设置默认语言为英文
 els.langSwitch.value = 'en';
 switchLanguage('en');
 setMode('password');
