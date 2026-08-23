@@ -45,10 +45,10 @@ For the most reliable clipboard behavior, serve the folder through a local HTTP 
 Example using Python:
 
 ```bash
-python -m http.server 8000
+python -m http.server 8018
 ```
 
-Then visit <http://localhost:8000/>.
+Then visit <http://localhost:8018/>.
 
 ## Project Structure
 

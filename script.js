@@ -60,7 +60,7 @@ const translations = {
         errorFilterNoPool: "高级选项过滤后没有可用字符，请调整选项。",
         errorFilterNoCategory: "高级选项过滤后没有可用字符类别，请调整选项。",
         errorLengthTooShort: "当前有效字符集 {n} 种，密码位数不能小于 {n}。",
-        errorMobileConstraint: "无法在 {maxAttempts} 次尝试内生成满足智能手机简单模式约束的密码，请尝试增加密码位数或调整字符集。",
+        errorMobileConstraintNoFill: "智能手机简单模式下，需要至少勾选小写字母或数字来填充剩余位，请调整。",
         repeatPenalty: "重复字符",
         sequencePenalty: "连续/键盘序列",
         allSamePenalty: "全同字符 -90%",
@@ -128,7 +128,7 @@ const translations = {
         errorFilterNoPool: "No usable characters after filtering. Adjust options.",
         errorFilterNoCategory: "No usable character categories after filtering. Adjust options.",
         errorLengthTooShort: "Effective character sets: {n}, password length cannot be less than {n}.",
-        errorMobileConstraint: "Unable to generate a password satisfying the smartphone constraint after {maxAttempts} attempts. Try increasing length or adjusting charsets.",
+        errorMobileConstraintNoFill: "Smartphone mode requires at least lowercase or digits for filling remaining positions, please adjust.",
         repeatPenalty: "Repeated chars",
         sequencePenalty: "Sequential/keyboard pattern",
         allSamePenalty: "All same char -90%",
@@ -228,11 +228,9 @@ function updateMobileHint() {
 }
 
 function handleCheckboxChange(e) {
-    // 只处理特殊字符的禁用状态
     if (e.target === els.special) {
         els.specialChars.disabled = !els.special.checked;
     }
-    // 更新提示
     updateMobileHint();
     generate();
 }
@@ -339,6 +337,60 @@ function generatePassword(pool, length, categories) {
     return result.join("");
 }
 
+// ===== 重写的智能手机简单模式生成函数（构造法） =====
+function generateMobilePassword(length, categories, effectivePool) {
+    // 判断是否勾选了大写和特殊
+    const hasUpper = categories.some(c => c.name === getCategoryName('upper'));
+    const hasSpecial = categories.some(c => c.name === getCategoryName('special'));
+
+    // 如果两者都未勾选，则退化为普通生成
+    if (!hasUpper && !hasSpecial) {
+        return generatePassword(effectivePool, length, categories);
+    }
+
+    // 构造填充池（小写 + 数字，因为这是简单的字符）
+    const lowerCat = categories.find(c => c.name === getCategoryName('lower'));
+    const digitCat = categories.find(c => c.name === getCategoryName('digits'));
+    let fillPool = '';
+    if (lowerCat) fillPool += lowerCat.chars;
+    if (digitCat) fillPool += digitCat.chars;
+
+    // 如果填充池为空，则无法满足长度（只能产生1或2位），抛出错误
+    if (!fillPool) {
+        throw new Error(t('errorMobileConstraintNoFill'));
+    }
+
+    // 创建一个空数组
+    const chars = [];
+
+    // 1. 如果需要大写，从大写池中取一个随机字符
+    if (hasUpper) {
+        const upperCat = categories.find(c => c.name === getCategoryName('upper'));
+        chars.push(randomChar(upperCat.chars));
+    }
+
+    // 2. 如果需要特殊，从特殊池中取一个随机字符
+    if (hasSpecial) {
+        const specialCat = categories.find(c => c.name === getCategoryName('special'));
+        chars.push(randomChar(specialCat.chars));
+    }
+
+    // 此时 chars 长度可能是 1（只勾了一个）或 2（两个都勾了）
+
+    // 3. 剩余位数填充
+    const remain = length - chars.length;
+    if (remain < 0) {
+        throw new Error(t('errorLengthTooShort', { n: categories.length }));
+    }
+    for (let i = 0; i < remain; i++) {
+        chars.push(randomChar(fillPool));
+    }
+
+    // 4. 打乱顺序（shuffle）
+    shuffle(chars);
+    return chars.join('');
+}
+
 function generatePin(length) {
     let out = "";
     for (let i = 0; i < length; i++) out += randomChar(DIGITS);
@@ -347,18 +399,6 @@ function generatePin(length) {
 
 function escapeHtml(str) {
     return str.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
-}
-
-// ---- 验证智能手机简单模式约束 ----
-function isPasswordValidForMobile(pw, upperEnabled, specialEnabled) {
-    if (!upperEnabled && !specialEnabled) return true; // 无约束
-    const upperCount = (pw.match(/[A-Z]/g) || []).length;
-    const specialCount = (pw.match(/[^a-zA-Z0-9]/g) || []).length;
-    const total = upperCount + specialCount;
-    if (total > 2) return false;
-    if (upperEnabled && upperCount === 0) return false;
-    if (specialEnabled && specialCount === 0) return false;
-    return true;
 }
 
 function renderOutput(list) {
@@ -450,7 +490,6 @@ function analyzeStrength(password) {
 
 function generate() {
     els.error.textContent = "";
-    // 更新提示（但不要覆盖过滤提示）
     updateMobileHint();
 
     const count = clampInt(els.count.value, 1, 10, 1);
@@ -477,9 +516,8 @@ function generate() {
             removedNames = filtered.removed || [];
             poolLen = effectivePool.length;
             selectedNames = effectiveCategories.map(c => c.name);
-            // 检查是否因过滤导致无可用字符
             if (removedNames.length) {
-                // 但提示已在 applyFilters 中通过错误抛出，我们不再重复提示
+                // 已在统计中显示
             }
             const minLen = effectiveCategories.length;
             if (length < minLen) {
@@ -492,25 +530,15 @@ function generate() {
                 els.lengthHint.style.color = "";
             }
 
-            // 生成密码，并应用智能手机简单模式约束
+            // ---- 生成密码（根据是否启用智能手机简单模式） ----
             const mobileMode = els.easyMobile.checked;
-            const upperEnabled = els.upper.checked;
-            const specialEnabled = els.special.checked;
-            const maxAttempts = 20;
-            let attempts = 0;
             const generatedList = [];
             for (let i = 0; i < count; i++) {
                 let pw;
-                let valid = false;
-                for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                if (mobileMode) {
+                    pw = generateMobilePassword(length, effectiveCategories, effectivePool);
+                } else {
                     pw = generatePassword(effectivePool, length, effectiveCategories);
-                    if (!mobileMode || isPasswordValidForMobile(pw, upperEnabled, specialEnabled)) {
-                        valid = true;
-                        break;
-                    }
-                }
-                if (!valid) {
-                    throw new Error(t('errorMobileConstraint', { maxAttempts }));
                 }
                 generatedList.push(pw);
             }
@@ -605,7 +633,10 @@ function toggleTheme() {
     themeToggle.textContent = isLight ? '🌙' : '☀️';
 }
 themeToggle.addEventListener('click', toggleTheme);
-
+// 默认暗色，无需额外操作
 // (可选) 默认记住用户偏好：如果你希望默认就是日间模式，取消下面这行的注释
 // document.body.classList.add('light-theme');
 // themeToggle.textContent = '🌙';
+
+//  不行，我觉得这不是一件特别难的事情，当我选中“智能手机输入简单时”，先创建一个blank_pw_arr，
+// 然后在生成密码时，先随机先后得从"大写池子"里和"特殊字符池子"各放一个到blank_pw_str里，然后剩下的位数按剩余位数用小写和数字填充，最后再shuffle，再打乱一次str的排序，这样就能保证大写和特殊字符总数不超过2个了。

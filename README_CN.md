@@ -45,10 +45,10 @@ PIN 模式只生成数字，并使用独立的长度范围。切换到 PIN 模�
 使用 Python 启动本地服务器：
 
 ```bash
-python -m http.server 8000
+python -m http.server 8018
 ```
 
-然后访问 <http://localhost:8000/>。
+然后访问 <http://localhost:8018/>。
 
 ## 项目结构
 
