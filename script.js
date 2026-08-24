@@ -568,11 +568,11 @@ function openQRCodeInNewTab() {
     tempDiv.style.display = 'none';
     document.body.appendChild(tempDiv);
 
-    try {
+    try { // 因为大尺寸的图780*780 能保证扫描成功，所以保留
         new QRCode(tempDiv, {
             text: text,
-            width: 750,
-            height: 750,
+            width: 780,
+            height: 780,
             colorDark: '#000000',
             colorLight: '#ffffff',
             correctLevel: QRCode.CorrectLevel.L
