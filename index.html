@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>密码生成器 V8 — 中英文双语言</title>
+    <title>密码生成器 V8 — 中英双语</title>
     <link rel="stylesheet" href="style.css" />
     <!-- 引入 QRCode 库 -->
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -250,7 +250,7 @@
             </div>
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                 <!-- 主题切换按钮 -->
-                <button id="themeToggle" style="background:var(--chip);border:1px solid var(--border);color:var(--text);border-radius:50%;width:44px;height:44px;font-size:20px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .2s ease;flex-shrink:0;" aria-label="切换主题">
+                <button id="themeToggle" data-i18n-aria="themeToggleAria" style="background:var(--chip);border:1px solid var(--border);color:var(--text);border-radius:50%;width:44px;height:44px;font-size:20px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .2s ease;flex-shrink:0;" aria-label="切换主题">
                     ☀️
                 </button>
                 <!-- 新增：专业强度检测按钮 -->
@@ -279,12 +279,12 @@
                 <section class="panel" id="pwLengthPanel">
                     <label class="panel-label" for="lengthSlider" data-i18n="pwLengthLabel">密码位数</label>
                     <div class="stepper">
-                        <button class="stepper-btn" id="lengthDown" type="button" aria-label="减少位数">−</button>
+                        <button class="stepper-btn" id="lengthDown" type="button" data-i18n-aria="lengthDecreaseAria" aria-label="减少位数">−</button>
                         <div class="slider-wrapper">
                             <input type="range" id="lengthSlider" min="0" max="128" value="10" step="1" />
                             <span class="slider-value" id="lengthDisplay">10</span>
                         </div>
-                        <button class="stepper-btn" id="lengthUp" type="button" aria-label="增加位数">+</button>
+                        <button class="stepper-btn" id="lengthUp" type="button" data-i18n-aria="lengthIncreaseAria" aria-label="增加位数">+</button>
                     </div>
                     <div class="hint" id="lengthHint" data-i18n="lengthHint">建议 8~32 位；默认 10 位。滑块为 0 时不生成密码。</div>
                 </section>
@@ -293,9 +293,9 @@
                 <section class="panel hidden" id="pinLengthPanel">
                     <label class="panel-label" for="pinLength" data-i18n="pinLengthLabel">PIN 位数</label>
                     <div class="stepper">
-                        <button class="stepper-btn" id="pinLengthDown" type="button" aria-label="减少位数">−</button>
+                        <button class="stepper-btn" id="pinLengthDown" type="button" data-i18n-aria="pinLengthDecreaseAria" aria-label="减少位数">−</button>
                         <input id="pinLength" type="number" min="3" max="32" value="6" inputmode="numeric" />
-                        <button class="stepper-btn" id="pinLengthUp" type="button" aria-label="增加位数">+</button>
+                        <button class="stepper-btn" id="pinLengthUp" type="button" data-i18n-aria="pinLengthIncreaseAria" aria-label="增加位数">+</button>
                     </div>
                     <div class="hint" data-i18n="pinHint">纯数字 PIN，支持 3~32 位；默认 6 位。</div>
                     <!-- 新增 PIN 选项 -->
@@ -321,9 +321,9 @@
                 <section class="panel">
                     <label class="panel-label" for="count" data-i18n="countLabel">生成组数（1~16）</label>
                     <div class="stepper">
-                        <button class="stepper-btn" id="countDown" type="button" aria-label="减少组数">−</button>
+                        <button class="stepper-btn" id="countDown" type="button" data-i18n-aria="countDecreaseAria" aria-label="减少组数">−</button>
                         <input id="count" type="number" min="1" max="16" value="2" inputmode="numeric" />
-                        <button class="stepper-btn" id="countUp" type="button" aria-label="增加组数">+</button>
+                        <button class="stepper-btn" id="countUp" type="button" data-i18n-aria="countIncreaseAria" aria-label="增加组数">+</button>
                     </div>
                     <div class="hint" data-i18n="countHint">一次生成多组，直接复制全部结果即可。</div>
                 </section>
@@ -348,7 +348,7 @@
 
                 <!-- 高级选项 -->
                 <section class="panel" id="advancedPanel">
-                    <label class="panel-label" data-i18n="advancedLabel">高级选项 <span class="advanced-tag">V8 新增互斥</span></label>
+                    <label class="panel-label" data-i18n="advancedLabel">高级选项 <span class="advanced-tag" data-i18n="advancedTag">V8 新增互斥</span></label>
                     <div class="checks">
                         <label class="check"><input id="easySpeak" type="checkbox" /><span class="cb__control"><span class="cb__checkmark">✓</span></span><span class="cb__label" data-i18n="easySpeakLabel">易于朗读 <small>（避免歧义字符）</small></span></label>
                         <label class="check"><input id="easyRead" type="checkbox" /><span class="cb__control"><span class="cb__checkmark">✓</span></span><span class="cb__label" data-i18n="easyReadLabel">易于阅读 <small>（避免相似字符）</small></span></label>

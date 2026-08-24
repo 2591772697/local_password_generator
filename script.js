@@ -27,6 +27,7 @@ const translations = {
         specialCharsLabel: "特殊字符内容",
         specialHint: "勾选“特殊字符”后，这里的字符会被纳入生成池；也可以自己删改内容。",
         advancedLabel: "高级选项",
+        advancedTag: "V8 新增互斥",
         easySpeakLabel: "易于朗读（避免歧义字符）",
         easyReadLabel: "易于阅读（避免相似字符）",
         easyMobileLabel: "智能手机上输入简单（大写和特殊字符总数 ≤ 2）",
@@ -62,6 +63,13 @@ const translations = {
         errorLengthTooShort: "当前有效字符集 {n} 种，密码位数不能小于 {n}。",
         errorMobileConstraintNoFill: "智能手机简单模式下，需要至少勾选小写字母或数字来填充剩余位，请调整。",
         errorZeroLength: "密码位数不能为 0，请增加长度。",
+        errorQrGenerationFailed: "⚠️ 二维码生成失败，请重试。",
+        errorQrImageMissing: "⚠️ 无法获取二维码图像",
+        errorPopupBlocked: "⚠️ 请允许弹出窗口，以打开二维码。",
+        errorPopupOpenFailed: "⚠️ 打开新窗口失败，请手动复制密码到二维码生成器。",
+        qrTitle: "QR Code",
+        qrAlt: "二维码",
+        popupNoContent: "没有内容可生成二维码",
         repeatPenalty: "重复字符",
         sequencePenalty: "连续/键盘序列",
         allSamePenalty: "全同字符 -90%",
@@ -82,6 +90,13 @@ const translations = {
         excludeConsecutiveLabel: "排除连续数字（如 66, 11, 00）",
         excludeRepeatedLabel: "排除相同数字（每位数字只能出现一次）",
         pinOptionsHint: "排除相同数字仅在位数 ≤ 10 时生效",
+        themeToggleAria: "切换主题",
+        lengthDecreaseAria: "减少位数",
+        lengthIncreaseAria: "增加位数",
+        pinLengthDecreaseAria: "减少位数",
+        pinLengthIncreaseAria: "增加位数",
+        countDecreaseAria: "减少组数",
+        countIncreaseAria: "增加组数",
         // 强度检测器
         strengthCheckerBtn: "🔍 强度检测",
         modalTitle: "🔍 专业密码强度检测",
@@ -132,6 +147,7 @@ const translations = {
         specialCharsLabel: "Special characters content",
         specialHint: "When 'Special characters' is checked, these characters are included; you can edit them.",
         advancedLabel: "Advanced Options",
+        advancedTag: "V8 new exclusion",
         easySpeakLabel: "Easy to speak (avoid ambiguous characters)",
         easyReadLabel: "Easy to read (avoid similar characters)",
         easyMobileLabel: "Smartphone-friendly (uppercase + special ≤ 2 chars)",
@@ -167,6 +183,13 @@ const translations = {
         errorLengthTooShort: "Effective character sets: {n}, password length cannot be less than {n}.",
         errorMobileConstraintNoFill: "Smartphone mode requires at least lowercase or digits for filling remaining positions, please adjust.",
         errorZeroLength: "Password length cannot be 0, please increase.",
+        errorQrGenerationFailed: "⚠️ QR code generation failed, please try again.",
+        errorQrImageMissing: "⚠️ Unable to obtain the QR image",
+        errorPopupBlocked: "⚠️ Please allow pop-ups to open the QR code.",
+        errorPopupOpenFailed: "⚠️ Failed to open a new window; please manually copy the password into the QR generator.",
+        qrTitle: "QR Code",
+        qrAlt: "QR code",
+        popupNoContent: "There is no content to generate a QR code",
         repeatPenalty: "Repeated chars",
         sequencePenalty: "Sequential/keyboard pattern",
         allSamePenalty: "All same char -90%",
@@ -187,6 +210,13 @@ const translations = {
         excludeConsecutiveLabel: "Exclude consecutive digits (e.g., 66, 11, 00)",
         excludeRepeatedLabel: "Exclude repeated digits (each digit can appear only once)",
         pinOptionsHint: "Exclude repeated digits only works when length ≤ 10",
+        themeToggleAria: "Toggle theme",
+        lengthDecreaseAria: "Decrease length",
+        lengthIncreaseAria: "Increase length",
+        pinLengthDecreaseAria: "Decrease length",
+        pinLengthIncreaseAria: "Increase length",
+        countDecreaseAria: "Decrease count",
+        countIncreaseAria: "Increase count",
         // Strength checker
         strengthCheckerBtn: "🔍 Strength Check",
         modalTitle: "🔍 Professional Password Strength Checker",
@@ -275,11 +305,12 @@ const els = {
 };
 
 let currentMode = 'password';
-let currentLang = 'zh';
+let currentLang = 'en';
 
 // ===== 语言切换函数 =====
 function switchLanguage(lang) {
     currentLang = lang;
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if (translations[lang] && translations[lang][key] !== undefined) {
@@ -290,6 +321,18 @@ function switchLanguage(lang) {
         const key = el.getAttribute('data-i18n-placeholder');
         if (translations[lang] && translations[lang][key] !== undefined) {
             el.placeholder = translations[lang][key];
+        }
+    });
+    document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+        const key = el.getAttribute('data-i18n-aria');
+        if (translations[lang] && translations[lang][key] !== undefined) {
+            el.setAttribute('aria-label', translations[lang][key]);
+        }
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.getAttribute('data-i18n-title');
+        if (translations[lang] && translations[lang][key] !== undefined) {
+            el.setAttribute('title', translations[lang][key]);
         }
     });
     generate();
@@ -558,17 +601,16 @@ function openQRCodeInNewTab() {
     const container = els.qrcodeContainer;
     const text = container._qrText;
     if (!text) {
-        els.error.textContent = t('noContent') || '没有内容可生成二维码';
+        els.error.textContent = t('noContent') || t('popupNoContent');
         setTimeout(() => els.error.textContent = '', 1500);
         return;
     }
 
-    // 1. 生成二维码 Canvas（放入隐藏容器）
     const tempDiv = document.createElement('div');
     tempDiv.style.display = 'none';
     document.body.appendChild(tempDiv);
 
-    try { // 因为大尺寸的图780*780 能保证扫描成功，所以保留
+    try {
         new QRCode(tempDiv, {
             text: text,
             width: 780,
@@ -579,7 +621,7 @@ function openQRCodeInNewTab() {
         });
     } catch (e) {
         console.error('QR Code generation error:', e);
-        els.error.textContent = '⚠️ 二维码生成失败，请重试。';
+        els.error.textContent = t('errorQrGenerationFailed');
         setTimeout(() => els.error.textContent = '', 2000);
         document.body.removeChild(tempDiv);
         return;
@@ -587,23 +629,21 @@ function openQRCodeInNewTab() {
 
     const canvas = tempDiv.querySelector('canvas');
     if (!canvas) {
-        els.error.textContent = '⚠️ 无法获取二维码图像';
+        els.error.textContent = t('errorQrImageMissing');
         setTimeout(() => els.error.textContent = '', 1800);
         document.body.removeChild(tempDiv);
         return;
     }
 
-    // 获取图片 Data URL
     const dataUrl = canvas.toDataURL('image/png');
-    document.body.removeChild(tempDiv); // 立即清理临时元素
+    document.body.removeChild(tempDiv);
 
-    // 2. 构建完整 HTML 字符串
     const html = `
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>QR Code</title>
+    <title>${t('qrTitle')}</title>
     <style>
         * { box-sizing: border-box; }
         html, body { margin: 0; min-height: 100vh; }
@@ -631,29 +671,27 @@ function openQRCodeInNewTab() {
 </head>
 <body>
     <div class="qr-wrapper">
-        <img src="${dataUrl}" alt="QR Code" />
+        <img src="${dataUrl}" alt="${t('qrAlt')}" />
     </div>
 </body>
 </html>
     `;
 
-    // 3. 使用 Blob URL 在新标签页中打开
     try {
         const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
         const blobUrl = URL.createObjectURL(blob);
 
         const win = window.open(blobUrl, '_blank');
         if (!win) {
-            els.error.textContent = '⚠️ 请允许弹出窗口，以打开二维码。';
+            els.error.textContent = t('errorPopupBlocked');
             setTimeout(() => els.error.textContent = '', 1800);
             return;
         }
 
-        // 延迟释放 Blob URL，确保新窗口已加载（一般10秒后释放，不影响已打开页面）
         setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
     } catch (e) {
         console.error('Open new tab error:', e);
-        els.error.textContent = '⚠️ 打开新窗口失败，请手动复制密码到二维码生成器。';
+        els.error.textContent = t('errorPopupOpenFailed');
         setTimeout(() => els.error.textContent = '', 2000);
     }
 }
@@ -1048,8 +1086,9 @@ els.langSwitch.addEventListener("change", function() {
 });
 
 // ---- 初始化 ----
-els.langSwitch.value = 'en';
-switchLanguage('en');
+const initialLang = (navigator.language || '').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+els.langSwitch.value = initialLang;
+switchLanguage(initialLang);
 setMode('password');
 
 // ---- 主题切换 ----
