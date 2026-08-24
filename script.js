@@ -558,50 +558,104 @@ function openQRCodeInNewTab() {
     const container = els.qrcodeContainer;
     const text = container._qrText;
     if (!text) {
-        els.error.textContent = t('noContent');
+        els.error.textContent = t('noContent') || '没有内容可生成二维码';
         setTimeout(() => els.error.textContent = '', 1500);
         return;
     }
+
+    // 1. 生成二维码 Canvas（放入隐藏容器）
     const tempDiv = document.createElement('div');
     tempDiv.style.display = 'none';
     document.body.appendChild(tempDiv);
-    const qr = new QRCode(tempDiv, {
-        text: text,
-        width: 720,
-        height: 720,
-        colorDark: '#000000',
-        colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.L
-    });
+
+    try {
+        new QRCode(tempDiv, {
+            text: text,
+            width: 750,
+            height: 750,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.L
+        });
+    } catch (e) {
+        console.error('QR Code generation error:', e);
+        els.error.textContent = '⚠️ 二维码生成失败，请重试。';
+        setTimeout(() => els.error.textContent = '', 2000);
+        document.body.removeChild(tempDiv);
+        return;
+    }
+
     const canvas = tempDiv.querySelector('canvas');
+    if (!canvas) {
+        els.error.textContent = '⚠️ 无法获取二维码图像';
+        setTimeout(() => els.error.textContent = '', 1800);
+        document.body.removeChild(tempDiv);
+        return;
+    }
+
+    // 获取图片 Data URL
     const dataUrl = canvas.toDataURL('image/png');
-    const win = window.open();
-    win.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head><title>QR Code</title>
-        <style>
-            body { margin:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f4f8; }
-            .qr-wrapper {
-                display:inline-block;
-                background: #ffffff;
-                padding: 14px;
-                border: 19px solid #1d4ed8;
-                border-radius: 16px;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            }
-            .qr-wrapper img { display:block; max-width:100%; height:auto; }
-        </style>
-        </head>
-        <body>
-            <div class="qr-wrapper">
-                <img src="${dataUrl}" />
-            </div>
-        </body>
-        </html>
-    `);
-    win.document.close();
-    document.body.removeChild(tempDiv);
+    document.body.removeChild(tempDiv); // 立即清理临时元素
+
+    // 2. 构建完整 HTML 字符串
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>QR Code</title>
+    <style>
+        * { box-sizing: border-box; }
+        html, body { margin: 0; min-height: 100vh; }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f0f4f8;
+            font-family: Arial, sans-serif;
+        }
+        .qr-wrapper {
+            display: inline-block;
+            background: #ffffff;
+            padding: 14px;
+            border: 19px solid #1d4ed8;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        .qr-wrapper img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="qr-wrapper">
+        <img src="${dataUrl}" alt="QR Code" />
+    </div>
+</body>
+</html>
+    `;
+
+    // 3. 使用 Blob URL 在新标签页中打开
+    try {
+        const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
+        const blobUrl = URL.createObjectURL(blob);
+
+        const win = window.open(blobUrl, '_blank');
+        if (!win) {
+            els.error.textContent = '⚠️ 请允许弹出窗口，以打开二维码。';
+            setTimeout(() => els.error.textContent = '', 1800);
+            return;
+        }
+
+        // 延迟释放 Blob URL，确保新窗口已加载（一般10秒后释放，不影响已打开页面）
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    } catch (e) {
+        console.error('Open new tab error:', e);
+        els.error.textContent = '⚠️ 打开新窗口失败，请手动复制密码到二维码生成器。';
+        setTimeout(() => els.error.textContent = '', 2000);
+    }
 }
 
 // ---- 渲染输出 ----

@@ -746,3 +746,178 @@ body.light-theme .mini {
 body.light-theme .mini:hover {
     background: #6a8a6a;
 }
+
+
+/* ===== 自定义滑动开关 (Toggle Switch) ===== */
+.toggle-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 14px;
+    color: var(--muted);
+    transition: color .2s;
+    flex-shrink: 0;
+}
+.toggle-switch:hover {
+    color: var(--text);
+}
+.toggle-switch input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+.toggle-slider {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: var(--border);
+    border-radius: 12px;
+    transition: background .3s cubic-bezier(.34, 1.56, .64, 1);
+    flex-shrink: 0;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,.25);
+}
+.toggle-slider::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: #ffffff;
+    border-radius: 50%;
+    transition: transform .3s cubic-bezier(.34, 1.56, .64, 1);
+    box-shadow: 0 2px 6px rgba(0,0,0,.3);
+}
+.toggle-switch input:checked + .toggle-slider {
+    background: var(--accent);
+}
+.toggle-switch input:checked + .toggle-slider::after {
+    transform: translateX(20px);
+}
+.toggle-switch input:focus-visible + .toggle-slider {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+/* 亮色主题适配 */
+body.light-theme .toggle-slider {
+    background: var(--border);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,.12);
+}
+body.light-theme .toggle-slider::after {
+    background: #ffffff;
+    box-shadow: 0 2px 6px rgba(0,0,0,.15);
+}
+body.light-theme .toggle-switch input:checked + .toggle-slider {
+    background: var(--accent);
+}
+body.light-theme .toggle-switch:hover {
+    color: var(--text);
+}
+
+
+/* ===== 高级质感“药丸”下拉框 ===== */
+.lang-select {
+    /* 重置默认样式 */
+    appearance: none;
+    -webkit-appearance: none;
+    
+    /* 布局与尺寸 */
+    min-width: 130px;
+    padding: 9px 44px 9px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    color: var(--text);
+    font-family: inherit;
+    
+    /* 背景与玻璃质感 */
+    background-color: var(--chip);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='8' viewBox='0 0 14 8'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%2394a3b8' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 14px;
+    
+    /* 边框与药丸圆角 */
+    border: 1px solid var(--border);
+    border-radius: 40px; /* 关键：极致圆角药丸形态 */
+    
+    /* 核心高级感：多层阴影 + 毛玻璃 */
+    box-shadow: 
+        inset 0 1px 2px rgba(255, 255, 255, 0.06),  /* 内部上方微弱高光 */
+        0 2px 4px rgba(0, 0, 0, 0.15);              /* 外部基础投影 */
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    
+    /* 交互过渡 */
+    cursor: pointer;
+    transition: all .25s cubic-bezier(.34, 1.56, .64, 1);
+}
+
+/* 悬停：上浮 + 高亮边框 + 外发光 */
+.lang-select:hover {
+    border-color: var(--accent);
+    background-color: var(--chip);
+    box-shadow: 
+        inset 0 1px 2px rgba(255, 255, 255, 0.1),
+        0 4px 16px rgba(56, 189, 248, 0.15); /* 彩色外发光 */
+    transform: translateY(-1.5px);
+}
+
+/* 聚焦：更明显的聚焦环 + 轻微上浮 */
+.lang-select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 
+        0 0 0 4px rgba(56, 189, 248, 0.2),   /* 弥散聚焦环 */
+        0 4px 16px rgba(56, 189, 248, 0.1);
+    transform: translateY(-1.5px);
+}
+
+/* 下拉选项面板（现代浏览器支持） */
+.lang-select option {
+    background: var(--panel);
+    color: var(--text);
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 400;
+    border-bottom: 1px solid var(--border);
+}
+.lang-select option:checked {
+    background: var(--accent) !important;
+    color: #ffffff;
+}
+
+/* ===== 亮色主题适配 ===== */
+body.light-theme .lang-select {
+    /* 深色箭头变更为深绿灰色 */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='8' viewBox='0 0 14 8'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%233a4b3c' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    /* 亮色下阴影变浅，高光变强 */
+    box-shadow: 
+        inset 0 1px 3px rgba(255, 255, 255, 0.8),
+        0 2px 4px rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(4px);
+}
+body.light-theme .lang-select:hover {
+    box-shadow: 
+        inset 0 1px 3px rgba(255, 255, 255, 0.9),
+        0 4px 16px rgba(90, 125, 90, 0.15); /* 莫兰迪绿色外发光 */
+    border-color: var(--accent);
+}
+body.light-theme .lang-select:focus {
+    box-shadow: 
+        0 0 0 4px rgba(90, 125, 90, 0.2),
+        0 4px 16px rgba(90, 125, 90, 0.1);
+    border-color: var(--accent);
+}
+body.light-theme .lang-select option {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+}
+body.light-theme .lang-select option:checked {
+    background: var(--accent) !important;
+    color: #ffffff;
+}
