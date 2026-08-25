@@ -2,13 +2,13 @@
 
 A lightweight, client-side password generator with English and Chinese interfaces.
 
-**Live demo:** [Password Generator V8 - Bilingual](https://the-password-generator.pages.dev/) (https://the-password-generator.pages.dev/)
+**Live demo:** [Password Generator V8 - Bilingual](https://the-password-generator.pages.dev/)
 
 ## Features
 
 - Generate regular passwords or numeric PINs.
-- Generate 1 to 10 passwords in one operation.
-- Configure password length from 1 to 256 characters.
+- Generate 1 to 16 passwords in one operation.
+- Configure password length from 0 to 128 characters (0 is treated as invalid for generation).
 - Configure PIN length from 3 to 32 digits.
 - Select lowercase letters, uppercase letters, digits, and custom special characters.
 - Enforce at least one character from every selected character category.
@@ -18,10 +18,13 @@ A lightweight, client-side password generator with English and Chinese interface
   - Easier-to-read passwords by removing visually similar characters.
   - Smartphone-friendly input by excluding uppercase letters and special-character conflicts.
 - Automatic password strength analysis with theoretical and effective entropy details.
-- Copy one password or all generated passwords to the clipboard.
+- Common weak-password detection via lazy async loading from `weakpasswords.json`.
+- Uses a browser-locale-aware default language: Chinese when the browser locale is Chinese, otherwise English.
 - English and Chinese language switching.
 - Dark and light themes.
 - Responsive layout for desktop and mobile screens.
+- Built-in QR code preview for copied passwords.
+- Professional strength checker modal for detailed password analysis.
 
 ## How It Works
 
@@ -30,6 +33,8 @@ Regular passwords are generated from the selected character pool. The generator 
 PIN mode generates numeric values only and uses a separate length range. Advanced password filters are hidden while PIN mode is active.
 
 Random values are produced with the browser's Web Crypto API (`crypto.getRandomValues`). Generation happens locally in the browser; passwords are not sent to a server by this project.
+
+The weak-password list is loaded lazily through `fetch('./weakpasswords.json')` and cached after the first successful load. This keeps the page lightweight and avoids loading the password dictionary unless the strength checker actually needs it.
 
 ## Run Locally
 
@@ -79,10 +84,10 @@ If the final command returns no connection, port 8018 is no longer in use. Start
 | File | Purpose |
 | --- | --- |
 | `index.html` | Main application markup and bilingual interface labels. |
-| `script.js` | Password generation, validation, filtering, strength analysis, copying, language switching, and theme toggling. |
+| `script.js` | Password generation, validation, filtering, strength analysis, copying, QR preview, weak-password lazy loading, language switching, and theme toggling. |
+| `weakpasswords.json` | Weak-password dictionary used by the lazy async common-password detection. |
 | `style.css` | Responsive layout, controls, result styling, and light/dark themes. |
-| `password-generator_V6.html` | Earlier standalone V6 version. |
-| `password-generator_V7.html` | Earlier standalone V7 version. |
+| `historical_edition/*.html` | Earlier standalone versions. |
 
 ## Browser Support
 
@@ -91,6 +96,7 @@ Use a modern browser with support for:
 - JavaScript ES2019 or newer features.
 - Web Crypto API.
 - Clipboard API, when copying generated results.
+- Fetch API for loading the weak-password list when analysis is used.
 
 ## Privacy Note
 
@@ -98,4 +104,6 @@ This is a local browser tool. Avoid copying generated passwords into untrusted a
 
 ## License
 
-No license file is currently included in this repository.
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
+
+Copyright (c) 2026
