@@ -788,7 +788,57 @@ function analyzeStrength(password) {
 }
 
 // ---- 专业强度检测器（模态框专用，更详细） ----
-function updateStrengthReport(password) {
+
+/**
+ * 从外部 JSON 加载弱密码列表（只加载一次）
+ * @returns {Promise<string[]>}
+ */
+let weakPasswords = null;
+let loadingPromise = null;
+
+function getFallbackList() {
+    return [
+        'password', '123456', '12345678', 'qwerty', 'abc123',
+        'admin', 'letmein', 'welcome', 'monkey', 'dragon'
+    ];
+}
+
+function loadWeakPasswords() {
+    if (weakPasswords !== null) {
+        return Promise.resolve(weakPasswords);
+    }
+    if (loadingPromise) {
+        return loadingPromise;
+    }
+
+    loadingPromise = fetch('./weakpasswords.json')
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            const list = Array.isArray(data) ? data.filter(item => typeof item === 'string') : [];
+            weakPasswords = list.length ? list : getFallbackList();
+            return weakPasswords;
+        })
+        .catch(error => {
+            console.warn('弱密码列表加载失败，使用内置备用列表', error);
+            weakPasswords = getFallbackList();
+            return weakPasswords;
+        })
+        .finally(() => {
+            loadingPromise = null;
+        });
+
+    return loadingPromise;
+}
+
+async function isWeakPasswordAsync(password) {
+    const list = await loadWeakPasswords();
+    return list.includes(password);
+}
+
+async function updateStrengthReport(password) {
     const tKey = (key, params) => t(key, params);
     const len = password.length;
     const hasLower = /[a-z]/.test(password);
@@ -829,9 +879,8 @@ function updateStrengthReport(password) {
     else { grade = 'excellent'; score = 80 + Math.min(20, (finalEntropy-128)/128*20); gradeLabel = tKey('scoreExcellent'); }
     score = Math.min(100, Math.round(score));
 
-    // 破解时间估算
-    const onlineRate = 1000; // 每秒1千次
-    const offlineRate = 1e12; // 每秒1万亿次
+    const onlineRate = 1000;
+    const offlineRate = 1e12;
     const totalCombinations = Math.pow(poolSize, len);
     const onlineSeconds = totalCombinations / onlineRate;
     const offlineSeconds = totalCombinations / offlineRate;
@@ -846,25 +895,20 @@ function updateStrengthReport(password) {
     const onlineStr = formatTime(onlineSeconds);
     const offlineStr = formatTime(offlineSeconds);
 
-    // 常见弱密码检测
-    const commonWeak = ["password","123456","12345678","123456789","qwerty","abc123","password1","admin","letmein","welcome","monkey","dragon","master","hello","freedom","whatever","trustno1","sunshine","qwertyuiop","iloveyou","princess","rockyou","1234567890","password123"];
-    const isCommon = commonWeak.includes(password.toLowerCase());
+    const isCommon = await isWeakPasswordAsync(password.toLowerCase());
 
-    // 生成建议
     let suggestions = [];
     if (len < 8) suggestions.push(tKey('suggestionShort'));
     if (variety < 3) suggestions.push(tKey('suggestionCharset'));
     if (repeats > 2) suggestions.push(tKey('suggestionNoRepeat'));
     if (seqPenalty > 0) suggestions.push(tKey('suggestionNoSequence'));
-    if (isCommon) suggestions.push(tKey('suggestionWeakCommon'));
+    if (isCommon) suggestions.push(`<span style="color:#ef4444;font-weight:700">${escapeHtml(tKey('suggestionWeakCommon'))}</span>`);
     if (grade === 'excellent') suggestions.push(tKey('suggestionExcellent'));
     else if (grade === 'strong' || grade === 'medium') suggestions.push(tKey('suggestionGood'));
-    // 如果无建议但又不强，给一个通用提示
     if (suggestions.length === 0 && grade !== 'excellent') {
         suggestions.push(tKey('suggestionCharset'));
     }
 
-    // 填充UI
     els.rLen.textContent = len;
     els.rTypes.textContent = variety + (variety > 0 ? ` (${[
         hasLower ? tKey('categoryLower') : '',
@@ -1073,8 +1117,8 @@ els.closeModal.addEventListener("click", () => {
 els.strengthModal.addEventListener("click", (e) => {
     if (e.target === els.strengthModal) els.strengthModal.classList.remove('active');
 });
-els.checkPwInput.addEventListener("input", function() {
-    updateStrengthReport(this.value);
+els.checkPwInput.addEventListener("input", async function() {
+    await updateStrengthReport(this.value);
 });
 els.showPwCheck.addEventListener("change", function() {
     els.checkPwInput.type = this.checked ? 'text' : 'password';
