@@ -1,6 +1,11 @@
 const LOWER = "abcdefghijklmnopqrstuvwxyz";
 const UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const DIGITS = "0123456789";
+
+let _randomBuffer = null;
+let _bufferIndex = 0;
+const BUFFER_SIZE = 256; // 一次生成 256 个 32 位整数
+
 const EXCLUDE_SPOKEN = new Set("lI1oO0B8S5Z2g9qG6T7".split(""));
 const EXCLUDE_SIMILAR = new Set("lI1|0Oo5Ss8B2Zz6G9gq".split(""));
 const EXCLUDE_MOBILE = new Set([..."ABCDEFGHIJKLMNOPQRSTUVWXYZ", ..."!@#$%^&*()-_=+[]{};:,.?/~`\"\\|<>"]);
@@ -383,14 +388,32 @@ function handleCheckboxChange(e) {
     generate();
 }
 
+
 // ---- 核心函数 ----
 function randomInt(maxExclusive) {
     if (maxExclusive <= 0) return 0;
     if (maxExclusive > 0x100000000) throw new Error("随机范围过大");
-    const arr = new Uint32Array(1);
+    
+    // 如果缓冲区为空或已用完，重新填充
+    if (!_randomBuffer || _bufferIndex >= _randomBuffer.length) {
+        _randomBuffer = new Uint32Array(BUFFER_SIZE);
+        crypto.getRandomValues(_randomBuffer);
+        _bufferIndex = 0;
+    }
+
     const limit = 0x100000000 - (0x100000000 % maxExclusive);
     let x;
-    do { crypto.getRandomValues(arr); x = arr[0]; } while (x >= limit);
+    do {
+        // 如果当前缓冲区已用完（极少发生，因为前面已检查，但拒绝采样可能消耗额外值）
+        if (_bufferIndex >= _randomBuffer.length) {
+            // 补充新数据
+            _randomBuffer = new Uint32Array(BUFFER_SIZE);
+            crypto.getRandomValues(_randomBuffer);
+            _bufferIndex = 0;
+        }
+        x = _randomBuffer[_bufferIndex++];
+    } while (x >= limit);
+    
     return x % maxExclusive;
 }
 
